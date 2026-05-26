@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full English V105 Local RAG RAFT System</title>
+
+<style>
+:root{--bg:#ffffff;--fg:#1f2937;--muted:#6b7280;--border:#d1d5db;--accent:#0f766e;--accent2:#115e59;--code:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.65}
+.container{max-width:1050px;margin:0 auto;padding:24px}
+header,.doc-footer{border:1px solid var(--border);border-radius:14px;padding:18px 22px;background:#fafafa;margin:18px 0}
+h1{font-size:1.9rem;line-height:1.25;margin:.5rem 0 1rem}
+h2{border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:2rem}
+h3{margin-top:1.4rem}
+.meta{color:var(--muted);font-size:.95rem}
+.topnav,.bottomnav{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.bottomnav{position:static;border-top:1px solid var(--border);border-bottom:0;margin-top:28px}
+.topnav a,.bottomnav a{background:var(--accent);color:white;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:650}
+.topnav a:hover,.bottomnav a:hover{background:var(--accent2)}
+pre{background:var(--code);padding:16px;border-radius:10px;overflow:auto;border:1px solid var(--border);white-space:pre-wrap}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid var(--border);padding:8px 10px;vertical-align:top}
+th{background:#f3f4f6}
+blockquote{border-left:4px solid var(--accent);margin:1rem 0;padding:.3rem 1rem;background:#f8fffd;color:#374151}
+.math-display{text-align:center;margin:18px 0;padding:12px;background:#fbfbfb;border:1px solid var(--border);border-radius:10px}
+.patchbox{border-left:5px solid var(--accent);background:#f8fffd;padding:14px 18px;margin:18px 0;border-radius:8px}
+a{color:#0f766e}
+[dir="rtl"]{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+.badge{display:inline-block;background:#e0f2f1;color:#115e59;border:1px solid #99f6e4;border-radius:999px;padding:2px 10px;margin:2px;font-size:.85rem}
+</style>
+
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]'],['$$','$$']],processEscapes:true},svg:{fontCache:'global'}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+<main class="container">
+
+<header>
+  <h1>The Architecture of Context Resilience</h1>
+  <p class="meta"><strong>Content Type:</strong> Local RAG RAFT System | <strong>Author:</strong> Shyed Shahriar | <strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p><span class="badge">Local RAG</span><span class="badge">RAFT</span><span class="badge">CCGSC</span><span class="badge">Graphify</span><span class="badge">GraphRAG</span><span class="badge">Persistent State</span></p>
+</header>
+<h1>The Architecture of Context Resilience: Technical Protocols for Large Language Model Session Migration and State Preservation</h1>
+
+<h2>Executive TL;DR</h2>
+<p>Long AI conversations degrade because both the model-side context pipeline and the user-side interface become overloaded. Large context increases token cost, retrieval difficulty, latency pressure, and UI rendering burden. The solution is not to paste the entire previous chat into a new window, but to migrate only the durable project state.</p>
+<p>This report proposes a context-resilience protocol: compress each long session into structured Markdown state files, preserve decisions and failed paths, externalize evidence logs, and restart new sessions from a compact handoff document.</p>
+<p>The recommended pattern is the core file set:</p>
+<ul>
+<li><code>PROJECT-SPEC.md</code></li>
+<li><code>SESSION-HANDOVER.md</code></li>
+<li><code>FAILED-PATHS.md</code></li>
+<li><code>DECISIONS.md</code></li>
+<li><code>EVIDENCE-LOG.md</code></li>
+</ul>
+<p>The core principle is simple: keep the chat window volatile, keep project state persistent.</p>
+<h2>1. Introduction: Why Long AI Sessions Degrade</h2>
+<p>The progressive degradation of performance in extended Large Language Model (LLM) interactions represents a convergence of architectural constraints in transformer-based systems and the resource-intensive nature of modern web-based document object model (DOM) rendering. As a conversation accumulates history, the underlying self-attention mechanism, which dictates how every token in a prompt relates to every other token, begins to reach a point of &quot;attention budget&quot; exhaustion. [1] This architectural ceiling, combined with the practical limitations of browser memory and the financial costs of processing ballooning token counts, necessitates a rigorous approach to session migration. The following report provides an exhaustive technical analysis of the mechanisms governing context limits, the comparative efficiency of data serialization formats, and a standardized protocol for distilling complex session states into high-density, portable Markdown documents for seamless continuity across new chat windows.</p>
+<h2>2. Technical Ceiling: Attention Cost, KV Cache, DOM Load</h2>
+<p>The primary challenge in maintaining a long-running AI conversation is not only interface length but also the interaction between transformer attention cost, KV-cache growth, provider-side serving limits, and browser-side rendering pressure.</p>
+<p>The original Transformer formulation defines scaled dot-product attention as:</p>
+<div class="math-display">\[\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V\]</div>
+<p>For a sequence length n, full self-attention induces pairwise token interactions in the attention-score matrix. This is the basis for the standard O(n^2) attention-score complexity claim. Practical long-context inference cost is also shaped by KV-cache growth, batching, hardware, attention kernels, quantization, and provider serving behavior, so latency and memory pressure are not determined by attention alone. [1]</p>
+<p>Modern long-context systems use several architectural mitigations. FlashAttention is best described as an IO-aware exact attention algorithm: it uses tiling to reduce reads and writes between GPU high-bandwidth memory and on-chip SRAM. It improves practical memory and speed behavior, but it does not remove the need for good state management in long sessions. [2] Sliding-window, sparse, blockwise, and distributed attention variants further reduce or distribute long-context cost. These methods improve feasible context length and serving efficiency, but they do not eliminate the need for state management. A model may accept a long input while still failing to retrieve or prioritize the right facts from a bloated transcript. Long-context availability does not guarantee reliable long-context use: Liu et al. show that model performance can degrade when relevant information is placed in the middle of long contexts. [3]</p>
+<p>A separate but practical problem occurs in the browser or IDE interface. Long chat sessions may contain many rendered Markdown blocks, tables, code blocks, LaTeX fragments, tool logs, file previews, and streamed responses. The browser must maintain and render this accumulated document object model while the model also processes increasingly large conversational state. Therefore, user-visible slowdown can come from multiple layers: browser DOM size, memory pressure, rendered content complexity, network latency, tool-call logs, extension overhead, and model-side inference latency.</p>
+<p>The result is a predictable degradation pattern: long sessions become slower, harder to navigate, more expensive to continue, and more vulnerable to instruction drift. The solution is not merely to “start a new chat,” but to migrate the session state into a compressed, structured, evidence-backed handoff document.</p>
+<table>
+<thead>
+<tr>
+<th>Performance Variable</th>
+<th>Impact of Increasing Context</th>
+<th>More Accurate Technical Cause</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Inference latency</td>
+<td>Usually increases, but not always linearly</td>
+<td>Active context size, KV-cache behavior, batching, kernels, hardware, provider serving stack</td>
+</tr>
+<tr>
+<td>API or compute cost</td>
+<td>Usually increases with input/output token volume</td>
+<td>Token-based billing and repeated context replay</td>
+</tr>
+<tr>
+<td>Reasoning reliability</td>
+<td>Can degrade non-linearly</td>
+<td>Attention dilution, retrieval failure, lost-in-the-middle effects, conflicting old context</td>
+</tr>
+<tr>
+<td>Interface stability</td>
+<td>Cumulative degradation</td>
+<td>Browser DOM size, rendered Markdown/code/LaTeX/tool logs, local memory pressure</td>
+</tr>
+<tr>
+<td>Operational clarity</td>
+<td>Decreases unless state is externalized</td>
+<td>Important decisions buried inside transcript history</td>
+</tr>
+</tbody></table>
+<h2>3. Tokenization Mechanics and Cost Economics</h2>
+<p>A precise understanding of tokenization is critical for designing efficient handoff documents. LLMs do not process text in words or characters but in &quot;tokens,&quot; which are numerical representations of common character sequences. The mapping from text to tokens varies by model and tokenizer. A single word like &quot;transformer&quot; may be represented as two tokens (&quot;trans&quot; + &quot;former&quot;), and the inclusion of whitespace, indentation, and special characters can significantly inflate the token count.</p>
+<p>Tokenization must be checked per model family. OpenAI token accounting uses model-family-specific encodings such as <code>o200k\_base</code>, <code>cl100k\_base</code>, and <code>p50k\_base</code>, so OpenAI workflows should use OpenAI-compatible tokenizer tooling. [4] Claude workflows should use Anthropic’s token-counting tools rather than assuming OpenAI tokenizer equivalence. [5] Llama workflows should be validated against the exact Llama runtime and model build; Meta’s Llama 3 release describes a tokenizer with a 128K-token vocabulary. [6]</p>
+<table>
+<thead>
+<tr>
+<th>Encoding / Tokenizer</th>
+<th>Target Models / Ecosystem</th>
+<th>Practical Use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>o200k\_base</code></td>
+<td>Newer OpenAI GPT-4o-family models</td>
+<td>Modern OpenAI token planning</td>
+</tr>
+<tr>
+<td><code>cl100k\_base</code></td>
+<td>GPT-4 / GPT-3.5-era OpenAI models</td>
+<td>Legacy and current OpenAI-compatible workflows</td>
+</tr>
+<tr>
+<td><code>p50k\_base</code></td>
+<td>GPT-3 / Codex-era models</td>
+<td>Older code-generation and legacy tooling</td>
+</tr>
+<tr>
+<td>Llama 3 tokenizer</td>
+<td>Meta Llama 3 / Llama 3.x ecosystem</td>
+<td>Open-weight and local engineering workflows; 128K-token vocabulary</td>
+</tr>
+<tr>
+<td>Claude token counting</td>
+<td>Anthropic Claude ecosystem</td>
+<td>Use Anthropic token-counting API/tools rather than assuming OpenAI-compatible counts</td>
+</tr>
+<tr>
+<td>Runtime-specific tokenizers</td>
+<td>Mistral, Qwen, DeepSeek, domain-specific models</td>
+<td>Validate against the actual deployment runtime</td>
+</tr>
+</tbody></table>
+<h3>Platform-Specific Considerations</h3>
+<p>Different LLM ecosystems handle tokenization, memory, tool use, prompt caching, and context persistence differently. A robust context-resilience protocol should therefore avoid assuming one provider’s tokenizer, memory model, or agent runtime.</p>
+<table>
+<thead>
+<tr>
+<th>Ecosystem</th>
+<th>Practical Consideration</th>
+<th>Recommended Handling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OpenAI / GPT family</td>
+<td>Tokenization uses OpenAI encodings such as <code>o200k\_base</code> and <code>cl100k\_base</code>; repeated prompts may benefit from prompt caching in API workflows</td>
+<td>Count tokens with OpenAI-compatible tooling; keep reusable instructions stable and near the front of prompts</td>
+</tr>
+<tr>
+<td>Anthropic / Claude family</td>
+<td>Claude uses its own token-counting behavior and provides token-counting tools for prompt planning</td>
+<td>Use Anthropic token-counting tools for Claude workflows; avoid assuming OpenAI tokenizer equivalence</td>
+</tr>
+<tr>
+<td>Llama / open-weight local models</td>
+<td>Llama 3 introduced a 128K-token vocabulary and is common in local/offline engineering pipelines</td>
+<td>Validate token count and context behavior using the exact local runtime and model build</td>
+</tr>
+<tr>
+<td>IDE agents</td>
+<td>Tool logs, file reads, terminal output, and patch history can inflate context quickly</td>
+<td>Summarize tool outputs into evidence logs; avoid replaying raw logs unless required</td>
+</tr>
+<tr>
+<td>RAG / GraphRAG systems</td>
+<td>External memory may retrieve chunks, entities, and graph relationships instead of full transcripts</td>
+<td>Store handoff sections as retrievable chunks and graph nodes</td>
+</tr>
+</tbody></table>
+<p>In the context of agentic workflows—where the AI performs multiple reasoning steps and tool calls—the cost of &quot;noisy&quot; context compounds rapidly. Each tool message exceeding a certain threshold (e.g., 2,000 tokens) adds to the input cost for every subsequent turn in the conversation. In a ReAct-style agent loop, if an agent takes five steps to resolve a query with 3,000 tokens of retrieved context per step, it consumes 15,000 tokens for a single invocation. This compounding effect makes the regular &quot;compaction&quot; or &quot;migration&quot; of the conversation history essential for both operational stability and financial efficiency.</p>
+<p>When a web interface becomes difficult to use, the cause is often layered: browser DOM size, rendered Markdown/code/LaTeX blocks, local memory pressure, network latency, tool-output history, and model-side inference latency can all contribute. Starting a new chat with a compact handoff can reduce rendered-history load and avoid replaying unnecessary context, but it does not literally reset all backend serving constraints. The goal of the migration document is to achieve the highest possible &quot;information density&quot;—defined as the ratio of semantic utility to token count.</p>
+<h2>4. Serialization Formats for State Preservation</h2>
+<p>The format in which a session&#39;s &quot;state&quot; is transferred determines how much of the context window in the new chat will be consumed by the &quot;handoff&quot; itself. If a user simply copies and pastes a 100,000-word conversation into a new window, the new window will immediately suffer from the same attention decay and performance issues as the previous one. Therefore, the handoff must be serialized in a format that maximizes model comprehension while minimizing token waste.</p>
+<p>Markdown is a strong default for handoff documents because it balances human readability, hierarchy, and model-readable structure. For structured datasets, the best format may vary by task, model, and data shape; YAML, Markdown key-value, Markdown tables, JSONL, CSV, or TOON-style formats may each be appropriate.</p>
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th>Relative Token Efficiency</th>
+<th>Relative Reasoning Utility</th>
+<th>Recommended Use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CSV</td>
+<td>High for flat tabular data</td>
+<td>Low to medium</td>
+<td>Simple rows and columns</td>
+</tr>
+<tr>
+<td>Markdown table</td>
+<td>Medium</td>
+<td>Medium to high</td>
+<td>Comparisons and compact state summaries</td>
+</tr>
+<tr>
+<td>YAML</td>
+<td>Medium</td>
+<td>High for nested configuration</td>
+<td>Nested project settings and structured state</td>
+</tr>
+<tr>
+<td>JSON</td>
+<td>Low to medium</td>
+<td>Medium</td>
+<td>Strict machine interchange</td>
+</tr>
+<tr>
+<td>XML</td>
+<td>Low</td>
+<td>Low to medium</td>
+<td>Legacy schema-driven systems</td>
+</tr>
+<tr>
+<td>TOON / dense formats</td>
+<td>Potentially high</td>
+<td>Task-dependent</td>
+<td>Only when the workflow already supports it</td>
+</tr>
+</tbody></table>
+<p><strong>Benchmark caution:</strong> Format-comparison results should be treated as task-specific indicators, not universal constants. Token efficiency and reasoning utility vary by model, tokenizer, prompt design, dataset structure, nesting depth, task type, and scoring method. Exact percentages should be included only when the full benchmark methodology is documented.</p>
+<p>As a practical rule, CSV is compact for flat tabular data, but it lacks the semantic hierarchy needed for many cold-start handoff tasks. Markdown headings, lists, and tables usually provide clearer structural cues for project-state transfer, although the best format remains task- and model-dependent. YAML, JSON, CSV, Markdown, XML, and dense formats should be selected based on the receiving system, the task type, and the required balance between human readability and machine parsing.</p>
+<p>For session migration, the goal is to create a Markdown document that uses these structural cues to represent the &quot;current state&quot; of the project, the &quot;decisions made,&quot; and the &quot;remaining tasks&quot; without including the thousands of intermediate conversational filler words that typically bloat a long chat.</p>
+<h3>4.1 Format, Compression, Memory, and Graph Layers</h3>
+<p>The protocol separates five layers that are often confused:</p>
+<ol>
+<li><strong>Human state formats</strong> — Markdown files used for human-readable handoff and decision continuity.</li>
+<li><strong>Machine serialization formats</strong> — JSON, JSONL, YAML, CSV, TOON-style dense records.</li>
+<li><strong>Output compression styles</strong> — Caveman / Cavemem, SPR, dense status summaries.</li>
+<li><strong>External memory layers</strong> — MemPalace, vector databases, local memory stores.</li>
+<li><strong>Knowledge graph layers</strong> — GraphRAG and Graphify/Graphifyy.</li>
+</ol>
+<p>These layers solve different problems. Markdown is for durable human-facing state. YAML is for editable configuration. JSONL is for append-only machine logs. TOON is for compact repeated structured records. Caveman/Cavemem compresses response style. MemPalace externalizes cross-session memory. AAAK is an experimental symbolic shorthand layer. Graphify/Graphifyy maps the repository or project corpus into a queryable knowledge graph.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Tool / Format</th>
+<th>Primary Use</th>
+<th>Maturity</th>
+<th>Publication Rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Human handoff</td>
+<td>Markdown</td>
+<td><code>PROJECT-SPEC.md</code>, <code>SESSION-HANDOVER.md</code>, decisions, failed paths</td>
+<td>Stable</td>
+<td>Core protocol</td>
+</tr>
+<tr>
+<td>Config state</td>
+<td>YAML</td>
+<td>agent routing, project metadata, workflow rules</td>
+<td>Stable</td>
+<td>Use when config must be human-editable</td>
+</tr>
+<tr>
+<td>Evidence/event logs</td>
+<td>JSONL / NDJSON</td>
+<td>run logs, MCP logs, event streams, evidence archives</td>
+<td>Stable</td>
+<td>Use for append-only machine evidence</td>
+</tr>
+<tr>
+<td>Strict interchange</td>
+<td>JSON</td>
+<td>APIs, schemas, tool calls</td>
+<td>Stable</td>
+<td>Use where parser strictness matters</td>
+</tr>
+<tr>
+<td>Flat tabular data</td>
+<td>CSV</td>
+<td>simple rows and columns</td>
+<td>Stable</td>
+<td>Use for simple tabular export</td>
+</tr>
+<tr>
+<td>Dense LLM payload</td>
+<td>TOON</td>
+<td>repeated structured records, compact LLM input</td>
+<td>Emerging</td>
+<td>Benchmark locally before hard claims</td>
+</tr>
+<tr>
+<td>Output compression</td>
+<td>Caveman / Cavemem</td>
+<td>terse summaries, compact agent responses, quick run reports</td>
+<td>Tool-specific</td>
+<td>Optional; do not overcompress critical reasoning</td>
+</tr>
+<tr>
+<td>External memory</td>
+<td>MemPalace</td>
+<td>local memory, recall layer, memory-indexed context</td>
+<td>Emerging</td>
+<td>Treat as optional and benchmark locally</td>
+</tr>
+<tr>
+<td>Symbolic memory shorthand</td>
+<td>MemPalace AAAK</td>
+<td>dictionary/entity shorthand, compressed memory notation</td>
+<td>Experimental</td>
+<td>Further Reading / experimental appendix only</td>
+</tr>
+<tr>
+<td>Repo/project graph</td>
+<td>Graphify / Graphifyy</td>
+<td>codebase graph, file/function map, project corpus graph</td>
+<td>High-value emerging tool</td>
+<td>Priority layer for IDE-agent and codebase workflows</td>
+</tr>
+</tbody></table>
+<p>Supporting source note for the paper: JSON Lines defines line-oriented JSON values and the <code>.jsonl</code> convention; YAML’s official site defines YAML as a human-friendly data serialization language; Graphify’s official repository identifies <code>graphifyy</code> as the official PyPI package while the CLI remains <code>graphify</code>. [10][11][13]</p>
+<h2>5. Context Compression Methodologies</h2>
+<p>Context compression is the engineering discipline of reducing token volume while preserving the information necessary for task completion. This process is distinct from simple truncation (cutting off the end of a file), which risks losing the very project requirements or system instructions that define the session&#39;s success. Effective compression pipelines typically employ a tiered approach:</p>
+<ul>
+<li><strong>Relevance Filtering</strong>: Identifying and removing content that is no longer relevant to the current trajectory of the conversation. This stage provides the highest impact by discarding zero-value tokens.</li>
+<li><strong>Semantic Deduplication</strong>: Removing redundant information. Often, in a long session, the user and AI will reiterate the same points. Deduplication identifies these overlaps and preserves only the most representative &quot;centroid&quot; of the information.</li>
+<li><strong>Extractive Summarization</strong>: Selecting the most informative sentences or &quot;load-bearing concepts&quot; while pruning filler words and non-essential clauses.</li>
+<li><strong>Symbolic Transformation</strong>: Converting natural language into dense symbolic or pseudocode representations.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Compression Layer</th>
+<th>Mechanism</th>
+<th>Approximate Reduction Potential</th>
+<th>Persistence Strategy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Layer 1: Tool Offload</td>
+<td>Replacing tool JSON with pointers</td>
+<td>40-70%</td>
+<td>Disk/External File</td>
+</tr>
+<tr>
+<td>Layer 2: Entity Eviction</td>
+<td>Removing old tool call payloads</td>
+<td>10-20%</td>
+<td>Volatile Memory</td>
+</tr>
+<tr>
+<td>Layer 3: Summarization</td>
+<td>Recursive condensation of history</td>
+<td>80-92%</td>
+<td>Handoff Document</td>
+</tr>
+<tr>
+<td>Layer 4: Model-Assisted Distillation</td>
+<td>The LLM generates, reviews, and compresses the handoff iteratively before final migration</td>
+<td>70–95% depending on transcript size and evidence requirements</td>
+<td><code>SESSION-HANDOVER.md</code>, <code>FAILED-PATHS.md</code>, <code>DECISIONS.md</code>, <code>EVIDENCE-LOG.md</code></td>
+</tr>
+</tbody></table>
+<p>These reduction ranges are operational estimates, not universal benchmark values. Actual savings depend on transcript length, tool-output volume, repeated context, tokenizer, model behavior, evidence requirements, and local workflow discipline.</p>
+<h3>5.1 Time-Token Saver Layers</h3>
+<p>Time-token saving should be treated as a layered workflow, not a single format decision.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Saver Method</th>
+<th>Where Used</th>
+<th>Main Benefit</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Human state</td>
+<td>Markdown handoff</td>
+<td><code>PROJECT-SPEC.md</code>, <code>SESSION-HANDOVER.md</code></td>
+<td>Clear continuation with low ambiguity</td>
+<td>Can become verbose if not pruned</td>
+</tr>
+<tr>
+<td>Machine logs</td>
+<td>JSONL / NDJSON</td>
+<td><code>EVIDENCE-LOG.jsonl</code>, run logs, MCP logs</td>
+<td>Streaming, append-only, scriptable</td>
+<td>Less readable for nontechnical users</td>
+</tr>
+<tr>
+<td>Config state</td>
+<td>YAML</td>
+<td>agent config, routing tables, project metadata</td>
+<td>Human-editable structured config</td>
+<td>Indentation and schema mistakes</td>
+</tr>
+<tr>
+<td>Dense structured payload</td>
+<td>TOON</td>
+<td>repeated records, table-like objects</td>
+<td>Potential token reduction vs verbose JSON</td>
+<td>Emerging format; validate locally</td>
+</tr>
+<tr>
+<td>Output compression</td>
+<td>Caveman / Cavemem style</td>
+<td>assistant summaries, IDE-agent status, quick run reports</td>
+<td>Shorter replies and lower output token cost</td>
+<td>Can lose nuance if overcompressed</td>
+</tr>
+<tr>
+<td>Long-term memory</td>
+<td>MemPalace / AAAK-style memory</td>
+<td>external memory, knowledge graph, local agent memory</td>
+<td>Reduces need to replay old context</td>
+<td>Tool maturity and benchmark claims need verification</td>
+</tr>
+<tr>
+<td>Codebase graph</td>
+<td>Graphify / Graphifyy</td>
+<td>repo graph, function/file map, dependency traversal</td>
+<td>Reduces repeated file scans and repo re-explanation</td>
+<td>Must be refreshed after code changes</td>
+</tr>
+</tbody></table>
+<p>Only JSONL, YAML, JSON, and Markdown should be treated as stable engineering formats. TOON, Caveman/Cavemem, MemPalace, AAAK, and Graphify/Graphifyy should be labeled as emerging or tool-specific token-saving methods unless the project runs its own benchmark and records the result in the Benchmark Methodology appendix.</p>
+<p>Model-assisted distillation should be treated as a controlled compression pipeline, not blind summarization. The assistant should preserve user instructions, decisions, evidence, failed paths, and next actions while removing filler, repeated explanations, superseded plans, and raw logs that can be replaced by stable file references.</p>
+<p>Recursive summarization may help preserve working state across long sessions, but effectiveness depends on the model, prompt design, update loop, evidence discipline, and the quality of the running summary. In a standard chat interface where this is not automated, the user must manually trigger a &quot;compaction&quot; event before the interface hangs. The resulting &quot;compacted md doc&quot; should prioritize &quot;User Goals&quot; and &quot;Reasoning&quot; above all else, as these are the most difficult elements for a model to reconstruct from a cold start.</p>
+<h2>6. Automated Ingestion Pipelines: IiSE, Vector RAG, GraphRAG, Graphify, and External Memory</h2>
+<p>A compressed Markdown handoff should not be treated only as a manual note. In production environments, it can become an ingestion artifact for an Intelligent Internal Search Engine (IiSE), vector database, or project-memory index. Microsoft’s GraphRAG is a structured, hierarchical RAG approach that extracts a knowledge graph from raw text, builds a community hierarchy, generates summaries for those communities, and uses those structures during retrieval. [7] This makes GraphRAG a suitable external-memory pattern for handoff documents because project state can be represented as linked objectives, decisions, evidence, blockers, files, and next actions.</p>
+<p>A practical ingestion flow is:</p>
+<ol>
+<li>Generate <code>SESSION-HANDOVER.md</code> from the active chat.</li>
+<li>Validate that it includes objective, current state, decisions, failed paths, evidence, and next actions.</li>
+<li>Chunk the document by Markdown heading.</li>
+<li>Store chunks in a vector database for semantic retrieval.</li>
+<li>Extract entities and relationships into a knowledge graph.</li>
+<li>Link graph nodes to files, commits, logs, tests, tools, owners, and blockers.</li>
+<li>Retrieve only the relevant state for the next chat or IDE-agent task.</li>
+</ol>
+<p>This converts the handoff from a static summary into a durable memory interface. The chat window remains volatile; the project state becomes searchable, queryable, and reusable.</p>
+<h3>6.1 Graphify / Graphifyy as the Repo-Context Graph Layer</h3>
+<p>GraphRAG and Graphify solve related but different problems. GraphRAG is a retrieval architecture that extracts graph structure from text corpora for retrieval and synthesis. Graphify/Graphifyy is a codebase and project-corpus graphing layer for AI-assisted development and technical documentation.</p>
+<p>Graphify should be treated as the <strong>repo-context graph layer</strong> of the protocol. Its purpose is to map code, documentation, diagrams, papers, and project artifacts into a queryable knowledge graph so that an AI assistant can answer structural questions without repeatedly rereading raw files.</p>
+<p>In this protocol:</p>
+<ul>
+<li><strong>GraphRAG</strong> maps knowledge relationships inside text/document corpora.</li>
+<li><strong>Graphify/Graphifyy</strong> maps project and codebase relationships across files, functions, modules, documents, diagrams, and artifacts.</li>
+<li><strong>MemPalace</strong> stores long-term memory and recall pointers.</li>
+<li><strong>Markdown handoff files</strong> store human-readable project state.</li>
+<li><strong>JSONL logs</strong> preserve machine-readable evidence.</li>
+<li><strong>YAML config</strong> controls agent rules, routing, and workflow policies.</li>
+</ul>
+<p>Graphify/Graphifyy should not replace Git, tests, evidence logs, or source files. It should sit above them as a navigation and context-retrieval layer.</p>
+<table>
+<thead>
+<tr>
+<th>Graphify Role</th>
+<th>Protocol Use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Codebase map</td>
+<td>Identify files, functions, modules, classes, routes, tests, and documentation relationships</td>
+</tr>
+<tr>
+<td>Dependency traversal</td>
+<td>Answer “what calls what,” “which file affects which module,” and “what depends on this component”</td>
+</tr>
+<tr>
+<td>Documentation graph</td>
+<td>Connect README, design docs, thesis notes, API docs, screenshots, and diagrams</td>
+</tr>
+<tr>
+<td>Evidence pointer layer</td>
+<td>Link <code>SESSION-HANDOVER.md</code> claims to source files, commits, logs, and graph nodes</td>
+</tr>
+<tr>
+<td>IDE-agent preflight</td>
+<td>Reduce broad repo rereads before patching or debugging</td>
+</tr>
+<tr>
+<td>CCGSC/Obsidian integration</td>
+<td>Build project graph memory from repo, Obsidian notes, thesis documents, and execution logs</td>
+</tr>
+<tr>
+<td>Token saver</td>
+<td>Replace repeated full-file scanning with targeted graph queries</td>
+</tr>
+<tr>
+<td>Risk control</td>
+<td>Make hidden coupling visible before code changes</td>
+</tr>
+</tbody></table>
+<p>Recommended rule:</p>
+<blockquote>
+<p>For codebase questions, query Graphify/Graphifyy first, then open raw files only when the graph answer needs source-level verification.</p>
+</blockquote>
+<p>Graphify/Graphifyy is especially valuable when a project has many repos, multiple package roots, mixed documentation, old code dumps, diagrams, test logs, and thesis notes. In those cases, ordinary keyword search and repeated AI file reads waste tokens and miss structural relationships.</p>
+<p>Graphify’s public documentation describes it as an open-source knowledge graph skill for AI coding assistants that can build a queryable graph from code, docs, papers, and diagrams, and the GitHub page identifies the official PyPI package as <code>graphifyy</code> with the CLI command <code>graphify</code>. ([Graphify][13])</p>
+<h3>6.2 Graphify Integration Architecture</h3>
+<p>Graphify should be integrated as a graph-first context layer between raw project files and the AI assistant.</p>
+<pre><code class="language-text">Raw Project Assets
+  ├─ source code
+  ├─ tests
+  ├─ README / docs
+  ├─ Obsidian notes
+  ├─ diagrams / images
+  ├─ PDFs / research notes
+  ├─ logs / reports
+  └─ deployment configs
+        ↓
+Graphify / Graphifyy Index
+        ↓
+Queryable Project Graph
+        ↓
+AI Agent / IDE Assistant
+        ↓
+Targeted file opens, patches, tests, reports
+</code></pre>
+<p>The system should follow this execution policy:</p>
+<ol>
+<li><strong>Graph first</strong> — ask the graph for structure and relationships.</li>
+<li><strong>Open raw files second</strong> — verify graph answers before editing.</li>
+<li><strong>Patch small</strong> — edit only files in approved scope.</li>
+<li><strong>Test evidence</strong> — write command/test outputs into <code>EVIDENCE-LOG.md</code> or JSONL.</li>
+<li><strong>Update handoff</strong> — record decisions, failed paths, blockers, and next actions.</li>
+<li><strong>Refresh graph after changes</strong> — rerun Graphify after structural edits.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Integration Layer</th>
+<th>File / Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Human state</td>
+<td><code>PROJECT-SPEC.md</code></td>
+<td>Stable rules, repo paths, safety constraints</td>
+</tr>
+<tr>
+<td>Session state</td>
+<td><code>SESSION-HANDOVER.md</code></td>
+<td>Current goal, blockers, next actions</td>
+</tr>
+<tr>
+<td>Negative memory</td>
+<td><code>FAILED-PATHS.md</code></td>
+<td>Prevent repeated bad approaches</td>
+</tr>
+<tr>
+<td>Decisions</td>
+<td><code>DECISIONS.md</code></td>
+<td>Approved architecture and process decisions</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td><code>EVIDENCE-LOG.md</code> / <code>EVIDENCE-LOG.jsonl</code></td>
+<td>Human-readable and machine-readable proof</td>
+</tr>
+<tr>
+<td>Config</td>
+<td><code>agent-routing.yaml</code></td>
+<td>Tool rules, graph-first policy, allowed paths</td>
+</tr>
+<tr>
+<td>Repo graph</td>
+<td>Graphify / Graphifyy output</td>
+<td>Queryable codebase/document graph</td>
+</tr>
+<tr>
+<td>Long-term memory</td>
+<td>MemPalace</td>
+<td>Cross-session recall and memory routing</td>
+</tr>
+<tr>
+<td>Corpus retrieval</td>
+<td>Vector RAG / GraphRAG</td>
+<td>Semantic and graph-based retrieval</td>
+</tr>
+<tr>
+<td>Version control</td>
+<td>Git</td>
+<td>Audit trail, rollback, branch-specific state</td>
+</tr>
+</tbody></table>
+<h3>6.3 Graphify Operating Procedure</h3>
+<p>For repo or codebase work, use Graphify as the default first-pass context tool.</p>
+<h4>A. When to run Graphify</h4>
+<p>Run Graphify when:</p>
+<ul>
+<li>Starting work in an unfamiliar repo.</li>
+<li>Returning to an old project after a long gap.</li>
+<li>A repo contains multiple package roots.</li>
+<li>The task asks “which file does what?”</li>
+<li>The task involves dependency tracing.</li>
+<li>The task involves architecture, control flow, data flow, or execution flow.</li>
+<li>The project has mixed code, docs, diagrams, logs, and thesis notes.</li>
+<li>An IDE agent is repeatedly opening many files without converging.</li>
+</ul>
+<h4>B. What Graphify should answer first</h4>
+<p>Before editing code, ask graph-level questions:</p>
+<pre><code class="language-text">1. What are the main modules and entry points?
+2. Which files call or depend on this file?
+3. Which tests cover this module?
+4. Which docs describe this component?
+5. Which files are likely affected by this requested change?
+6. Which files are disconnected, stale, or unused?
+7. Which logs or evidence files refer to this component?
+</code></pre>
+<h4>C. Graphify-first patch workflow</h4>
+<pre><code class="language-text">1. Read PROJECT-SPEC.md.
+2. Read SESSION-HANDOVER.md.
+3. Query Graphify for relevant files, functions, docs, and dependencies.
+4. Open only the top relevant raw files.
+5. Apply a small patch.
+6. Run targeted tests.
+7. Log evidence.
+8. Update SESSION-HANDOVER.md.
+9. Refresh Graphify if structure changed.
+</code></pre>
+<h4>D. Graphify refresh policy</h4>
+<p>Refresh the graph when:</p>
+<ul>
+<li>files are added, moved, deleted, or renamed;</li>
+<li>public APIs, routes, classes, or function signatures change;</li>
+<li>documentation or architecture maps are updated;</li>
+<li>new tests are added;</li>
+<li>a branch is merged;</li>
+<li>a major dependency is added;</li>
+<li>a generated report becomes stale.</li>
+</ul>
+<p>Do not refresh the full graph after every tiny text edit unless the graph depends on that file. Use bounded, scoped refresh whenever supported.</p>
+<h3>6.4 Integration With JSONL, YAML, Caveman, MemPalace, and AAAK</h3>
+<p>Graphify works best when paired with the other layers in this protocol.</p>
+<table>
+<thead>
+<tr>
+<th>Tool / Format</th>
+<th>How It Integrates With Graphify</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Markdown</td>
+<td>Graphify findings are summarized into <code>SESSION-HANDOVER.md</code>, <code>DECISIONS.md</code>, and <code>FAILED-PATHS.md</code></td>
+</tr>
+<tr>
+<td>JSONL / NDJSON</td>
+<td>Graph query events, agent runs, tool calls, and evidence events are logged as one JSON object per line</td>
+</tr>
+<tr>
+<td>YAML</td>
+<td>Agent routing rules define when to query Graphify before raw file reads</td>
+</tr>
+<tr>
+<td>TOON</td>
+<td>Optional compact format for repeated graph-query results after local validation</td>
+</tr>
+<tr>
+<td>Caveman / Cavemem</td>
+<td>Compress graph-query summaries into short status reports without dumping raw graph output</td>
+</tr>
+<tr>
+<td>MemPalace</td>
+<td>Stores durable cross-session memory and pointers to important graph nodes</td>
+</tr>
+<tr>
+<td>AAAK</td>
+<td>Experimental shorthand for compressed memory/entity maps; use only after local validation</td>
+</tr>
+<tr>
+<td>GraphRAG</td>
+<td>Provides corpus-level graph retrieval; complements Graphify’s repo/code graph</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>Provides source-of-truth version history and branch-specific graph checkpoints</td>
+</tr>
+</tbody></table>
+<h4>Example YAML routing rule</h4>
+<pre><code class="language-yaml">agent_context_policy:
+  default_mode: graph_first
+  before_raw_file_scan:
+    - read: docs/ai-state/PROJECT-SPEC.md
+    - read: docs/ai-state/SESSION-HANDOVER.md
+    - query: graphify
+  raw_file_open_limit: 5
+  evidence_log: docs/ai-state/EVIDENCE-LOG.jsonl
+  update_handoff_after:
+    - code_patch
+    - test_run
+    - architecture_decision
+    - failed_attempt
+</code></pre>
+<h4>Example JSONL evidence event</h4>
+<pre><code class="language-jsonl">{&quot;ts&quot;:&quot;2026-05-26T13:10:00+06:00&quot;,&quot;tool&quot;:&quot;graphify&quot;,&quot;query&quot;:&quot;find files related to worker reconnect&quot;,&quot;result_summary&quot;:&quot;5 candidate files, 2 route handlers, 1 stale reconnect helper&quot;,&quot;artifact&quot;:&quot;docs/graphify-report/worker-reconnect.md&quot;}
+{&quot;ts&quot;:&quot;2026-05-26T13:18:00+06:00&quot;,&quot;tool&quot;:&quot;test&quot;,&quot;command&quot;:&quot;npm test -- worker&quot;,&quot;status&quot;:&quot;pass&quot;,&quot;artifact&quot;:&quot;logs/2026-05-26-worker-test.log&quot;}
+</code></pre>
+<h4>Example Caveman-style graph summary</h4>
+<pre><code class="language-text">Graphify result:
+- target: worker reconnect
+- files: 5
+- hot files: WorkerPool.ts, reconnect.ts
+- risk: idle reload overlaps active task
+- next: inspect WorkerPool.ts + reconnect.ts only
+</code></pre>
+<h4>Example MemPalace pointer</h4>
+<pre><code class="language-text">memory_key: ccgsc.worker_reconnect.graph
+stores:
+  - graphify query: worker reconnect
+  - important nodes: WorkerPool.ts, reconnect.ts, director-refresh
+  - failed path: post-task 3s reload
+  - next safe action: idle-only reconnect validation
+</code></pre>
+<h4>Example AAAK-style experimental shorthand</h4>
+<pre><code class="language-text">AAAK/worker-reconnect:
+WRK-&gt;POOL-&gt;IDLECHK-&gt;RECONNECT
+NO:POSTTASK-3S-RELOAD
+YES:IDLE-ONLY-RECOVER
+EVID:graphify.worker-reconnect.20260526
+</code></pre>
+<p>AAAK-style shorthand should be treated as experimental. It is acceptable for internal memory compression, but not as the only source of truth. The source of truth must remain raw files, Git history, evidence logs, and human-readable handoff files.</p>
+<h2>7. Symbolic Compression and Sparse Priming</h2>
+<p>Sparse Priming Representations (SPR) are useful when the goal is to preserve conceptual state with minimal tokens. Instead of copying a long explanation, an SPR captures the semantic triggers needed to reconstruct the working context: project goal, active constraints, known risks, current decision, failed paths, and next executable action.</p>
+<p>SPR example:</p>
+<p><code>context-resilience → volatile-chat vs durable-state → PROJECT-SPEC stable rules → SESSION-HANDOVER current state → FAILED-PATHS negative memory → EVIDENCE-LOG proof pointers → new-chat ingestion → no repeated solved work</code></p>
+<p>Other symbolic styles, including SudoLang-style pseudocode and dense fact notation, may be useful for advanced users, but they should remain secondary. For maintainable engineering workflows, Markdown headings, tables, checklists, and evidence links should remain the default.</p>
+<h2>8. Persistent State Machine: PROJECT-SPEC.md and SESSION-HANDOVER.md</h2>
+<p>Professional AI workflows should externalize project state into persistent Markdown files rather than relying on the volatile chat window. A two-file pattern is sufficient for most projects:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Function</th>
+<th>Update Frequency</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PROJECT-SPEC.md</code></td>
+<td>Stable project facts: architecture, paths, tools, constraints, safety rules, coding standards</td>
+<td>Low-frequency; update only when project policy changes</td>
+</tr>
+<tr>
+<td><code>SESSION-HANDOVER.md</code></td>
+<td>Current session state: completed actions, failed paths, open blockers, evidence, next action</td>
+<td>Every major session or phase transition</td>
+</tr>
+</tbody></table>
+<p>Platform-specific names may still be used where appropriate. For example, Claude-oriented workflows may use <code>CLAUDE.md</code>, while other environments may prefer <code>AGENTS.md</code>, <code>PROJECT-SPEC.md</code>, <code>AI-RUNBOOK.md</code>, or <code>SESSION-HANDOVER.md</code>. The naming is secondary; the architectural principle is persistent external state.</p>
+<h3>Version-Control Integration</h3>
+<p>Version-controlling AI state files in Git improves traceability, rollback, branching, and auditability. [8] This is especially useful when <code>PROJECT-SPEC.md</code>, <code>SESSION-HANDOVER.md</code>, <code>FAILED-PATHS.md</code>, <code>DECISIONS.md</code>, and <code>EVIDENCE-LOG.md</code> influence code, research, operations, or business decisions.</p>
+<p>Recommended repository pattern:</p>
+<pre><code class="language-text">/docs/ai-state/
+  PROJECT-SPEC.md
+  SESSION-HANDOVER.md
+  FAILED-PATHS.md
+  DECISIONS.md
+  EVIDENCE-LOG.md
+  TASKS.md              # optional
+  PROMPT-STARTER.md     # optional
+</code></pre>
+<p>Minimum commit discipline:</p>
+<ul>
+<li>Commit state updates at phase gates.</li>
+<li>Do not commit raw secrets, credentials, private keys, or sensitive logs.</li>
+<li>Keep evidence references stable.</li>
+<li>Use append-only logs for major decisions and failed paths.</li>
+<li>Treat state-file changes as project artifacts, not casual notes.</li>
+</ul>
+<h2>9. CCGSC Infrastructure Extension: Edge, Dew, Cluster, Grid Sync</h2>
+<div class="patchbox">
+
+<p><strong>Append-only CCGSC system introduction:</strong> CCGSC, or Cloud Crowd Cluster Grid Supercomputing, is used in this protocol as a project-specific architecture for coordinating distributed AI work across local devices, offline-first nodes, clustered workers, grid-scale resource pools, and cloud control layers. In the Local RAG RAFT system, CCGSC acts as the execution and synchronization fabric: local RAG stores provide retrievable project evidence, RAFT-style domain adaptation improves model behavior over curated project corpora, Graphify/GraphRAG expose structural relationships, and Markdown/JSONL/YAML state files preserve human-readable control, machine-readable evidence, and routing policy. The purpose is not to replace source files, Git history, tests, or formal evidence, but to coordinate them into a recoverable, auditable, token-efficient workflow.</p>
+
+</div>
+<p>CCGSC - Cloud Crowd Cluster Grid Supercomputing is used here as a project-specific infrastructure extension rather than a universally standardized industry term. Readers outside the CCGSC project can treat this section as an optional distributed-systems mapping of the same handoff protocol.</p>
+<p>In a Cloud Crowd Cluster Grid Supercomputing (CCGSC) architecture, compressed state documents can act as lightweight synchronization units. Instead of distributing full chat transcripts or raw tool logs, each node can exchange small Markdown state artifacts that describe current objective, local evidence, completed tasks, failed paths, resource status, and next execution step.</p>
+<p>This is especially useful across:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Role of Handoff State</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Edge node</td>
+<td>Holds local device status, partial task result, local error log</td>
+</tr>
+<tr>
+<td>Dew / offline-first edge node</td>
+<td>Maintains local-first project memory and continuity when cloud or network access is unavailable</td>
+</tr>
+<tr>
+<td>Cluster node</td>
+<td>Aggregates multiple worker states into a shared project-state ledger</td>
+</tr>
+<tr>
+<td>Grid node</td>
+<td>Coordinates cross-cluster routing, evidence validation, and global task planning</td>
+</tr>
+<tr>
+<td>Cloud control plane</td>
+<td>Stores canonical state, version history, retrieval index, and operator dashboard</td>
+</tr>
+</tbody></table>
+<p>In this document, Dew refers to a local-first computing layer between end-user/edge devices and cloud/fog coordination layers, emphasizing autonomy, offline continuity, and synchronization after reconnection.</p>
+<p>The operational principle is simple: synchronize compressed state, not raw conversation noise. This reduces bandwidth, token replay, browser load, and agent confusion while preserving the evidence needed for reproducible work.</p>
+<h2>10. One-Page Decision Matrix: Session Migration Protocol</h2>
+<table>
+<thead>
+<tr>
+<th>Decision Factor</th>
+<th>Recommended Choice</th>
+<th>Why</th>
+<th>Alternative / Trade-off</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Handoff format</td>
+<td>Structured Markdown</td>
+<td>Human-readable, model-readable, supports headings, tables, checklists, and evidence links</td>
+<td>YAML for nested config; JSON for strict machine parsing</td>
+</tr>
+<tr>
+<td>Stable state file</td>
+<td><code>PROJECT-SPEC.md</code></td>
+<td>Holds durable project rules, paths, stack, constraints, safety rules</td>
+<td><code>CLAUDE.md</code>, <code>AGENTS.md</code>, <code>AI-RUNBOOK.md</code> as platform-specific aliases</td>
+</tr>
+<tr>
+<td>Session state file</td>
+<td><code>SESSION-HANDOVER.md</code></td>
+<td>Captures latest progress, blockers, failed paths, evidence, next action</td>
+<td>Raw transcript is too long and noisy</td>
+</tr>
+<tr>
+<td>Compression method</td>
+<td>Extractive summary + SPR-style dense assertions</td>
+<td>Keeps load-bearing facts while removing repeated explanation</td>
+<td>Full transcript paste causes context bloat</td>
+</tr>
+<tr>
+<td>Failed-path handling</td>
+<td>Dedicated section/file</td>
+<td>Prevents repeated mistakes across new chats</td>
+<td>Omitting failed paths wastes future tokens</td>
+</tr>
+<tr>
+<td>Tool-output handling</td>
+<td>Store raw logs externally; reference by path/pointer</td>
+<td>Avoids replaying huge terminal/MCP/tool outputs</td>
+<td>Pasting raw logs inflates context</td>
+</tr>
+<tr>
+<td>Handoff trigger</td>
+<td>Reasoning drift, slow UI, major decision, phase gate, or long tool history</td>
+<td>Migrates before failure</td>
+<td>Waiting until UI hangs risks poor handoff quality</td>
+</tr>
+<tr>
+<td>New-chat startup</td>
+<td>Paste handoff + explicit ingestion instruction</td>
+<td>Gives the next model a clean state target</td>
+<td>“Continue from previous chat” is ambiguous</td>
+</tr>
+<tr>
+<td>Versioning</td>
+<td>Git or dated filenames</td>
+<td>Enables rollback, audit, branch-specific state</td>
+<td>Manual scattered notes become unreliable</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Redact secrets before persistence</td>
+<td>Prevents credential leakage</td>
+<td>Raw copied state may expose API keys, passwords, endpoints</td>
+</tr>
+<tr>
+<td>Codebase context graph</td>
+<td>Graphify / Graphifyy</td>
+<td>Maps code, docs, diagrams, and repo structure into a queryable knowledge graph</td>
+<td>Raw grep/file reading is simpler but burns more context on large projects</td>
+</tr>
+<tr>
+<td>Machine evidence log</td>
+<td>JSONL / NDJSON</td>
+<td>Keeps tool events, command results, and agent run logs append-only and scriptable</td>
+<td>Markdown is easier for humans but weaker for large machine logs</td>
+</tr>
+</tbody></table>
+<h2>11. Execution Guide: Extract, Assemble, Ingest</h2>
+<p>This protocol has two different prompts for two different moments. The first prompt is used in the old or slowing chat to extract durable state. The second prompt is used in the new chat to ingest that state and continue work. Mixing these two prompts causes migration failure.</p>
+<h3>11.1 Step 1 — Trigger the Handoff</h3>
+<p>Create a handoff when any of these conditions occur:</p>
+<ul>
+<li>The chat becomes slow, unstable, or difficult to navigate.</li>
+<li>The assistant starts ignoring earlier constraints.</li>
+<li>The same issue is being repeated.</li>
+<li>The session contains major decisions, code changes, test results, or project-state updates.</li>
+<li>A new chat, IDE agent, or different model must continue the work.</li>
+<li>The work has reached a phase gate or commit boundary.</li>
+</ul>
+<h3>11.2 Step 2 — Run Prompt A in the Old Chat: Extraction Prompt</h3>
+<p>Paste this into the current old/slowing chat:</p>
+<pre><code class="language-md">Role: You are a project-state extraction engine.
+
+Task: Compress this current conversation into durable Markdown project state so a new assistant can continue without reading the full transcript.
+
+Create or update the following core files:
+
+1. `PROJECT-SPEC.md` — stable rules, architecture, constraints, tools, safety rules.
+2. `SESSION-HANDOVER.md` — current objective, progress, blockers, evidence, next actions.
+3. `FAILED-PATHS.md` — approaches that failed or must not be repeated.
+4. `DECISIONS.md` — approved decisions and rationale.
+5. `EVIDENCE-LOG.md` — command outputs, test results, artifact paths, proof references.
+
+Optional files if useful:
+
+6. `TASKS.md` — TODO / Doing / Blocked / Done.
+7. `PROMPT-STARTER.md` — startup prompt for the next chat.
+
+Extraction rules:
+- Prioritize user instructions, corrections, decisions, failed paths, evidence, and next actions.
+- Remove filler, repeated explanations, superseded plans, and raw logs that can be replaced by evidence pointers.
+- Preserve exact file paths, branch names, tool names, command names, and blockers where relevant.
+- Redact secrets, credentials, private keys, API keys, passwords, private endpoints, personal data, and sensitive logs.
+- Use `REDACTED\_\*` placeholders when redaction is needed.
+- Do not invent evidence.
+- Mark uncertain items as `UNVERIFIED`.
+
+Output:
+- Return the Markdown content for each generated file.
+- End with a short “New Chat Startup Instruction.”
+</code></pre>
+<h3>11.3 Step 3 — Assemble the Handoff Files</h3>
+<p>Save the extracted content into the project repository or secure state folder.</p>
+<p>Recommended structure:</p>
+<pre><code class="language-text">/docs/ai-state/
+  PROJECT-SPEC.md
+  SESSION-HANDOVER.md
+  FAILED-PATHS.md
+  DECISIONS.md
+  EVIDENCE-LOG.md
+  TASKS.md              # optional
+  PROMPT-STARTER.md     # optional
+</code></pre>
+<p>Before saving or committing, verify:</p>
+<ul>
+<li>No secrets are present.</li>
+<li>Evidence pointers resolve.</li>
+<li>Failed paths are explicit.</li>
+<li>Current objective is clear.</li>
+<li>Next action is executable.</li>
+<li>File paths and branch names are accurate.</li>
+<li>The handoff can be understood without the full transcript.</li>
+</ul>
+<h3>11.4 Step 4 — Run Prompt B in the New Chat: Ingestion Prompt</h3>
+<p>Paste this into the new chat together with the generated state files:</p>
+<pre><code class="language-md">Role: You are the next assistant taking over an existing technical project.
+
+Task: Ingest the provided project-state files and continue from the current objective without repeating solved work.
+
+Read order:
+1. `PROJECT-SPEC.md`
+2. `SESSION-HANDOVER.md`
+3. `FAILED-PATHS.md`
+4. `DECISIONS.md`
+5. `EVIDENCE-LOG.md`
+6. `TASKS.md` if present
+7. `PROMPT-STARTER.md` if present
+
+Instructions:
+- Treat stable project rules as canonical.
+- Prioritize user instructions, current objective, failed paths, decisions, evidence, and next actions.
+- Do not re-ask questions already answered in the handoff.
+- Do not suggest failed approaches unless new evidence changes the decision.
+- Use evidence pointers instead of asking for already-provided logs.
+- If information is missing, ask the smallest possible clarification.
+- If the next action is safe and clear, proceed directly.
+
+Output:
+1. Current objective in one paragraph.
+2. Load-bearing facts in 3–7 bullets.
+3. Failed paths that must not be repeated.
+4. Current blocker, if any.
+5. Next executable action.
+</code></pre>
+<h3>11.5 Handoff Quality Gate</h3>
+<p>A handoff is acceptable only if it includes:</p>
+<ul>
+<li>Current objective.</li>
+<li>Exact current state.</li>
+<li>Exact next action.</li>
+<li>Known blockers.</li>
+<li>Files/folders involved.</li>
+<li>Tools/scripts involved.</li>
+<li>Decisions already made.</li>
+<li>Failed approaches to avoid.</li>
+<li>Safety constraints.</li>
+<li>Evidence or logs supporting the state.</li>
+<li>Secret redaction check.</li>
+</ul>
+<p>Security check before saving:</p>
+<ul>
+<li>Remove API keys.</li>
+<li>Remove passwords.</li>
+<li>Remove private keys.</li>
+<li>Remove SSH credentials.</li>
+<li>Remove personal data.</li>
+<li>Remove private endpoints unless required.</li>
+<li>Remove internal IPs if not required.</li>
+<li>Remove customer data.</li>
+<li>Remove confidential logs.</li>
+<li>Remove payment or financial identifiers.</li>
+</ul>
+<p>Before saving persistent state, redact secrets, credentials, private keys, SSH material, personal data, private endpoints, and sensitive internal identifiers. [9]</p>
+<p>Use this redaction style:</p>
+<table>
+<thead>
+<tr>
+<th>Secret Type</th>
+<th>Stored Value</th>
+<th>Recovery Instruction</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API key</td>
+<td><code>REDACTED\_API\_KEY</code></td>
+<td>Retrieve from local secret manager or environment variable</td>
+</tr>
+<tr>
+<td>Password</td>
+<td><code>REDACTED\_PASSWORD</code></td>
+<td>Never store in Markdown</td>
+</tr>
+<tr>
+<td>Private endpoint</td>
+<td><code>REDACTED\_PRIVATE\_ENDPOINT</code></td>
+<td>Restore from deployment config</td>
+</tr>
+</tbody></table>
+<h3>11.6 Compression Rules</h3>
+<p>Prefer:</p>
+<ul>
+<li>Facts over transcript.</li>
+<li>Decisions over debate.</li>
+<li>Current state over history.</li>
+<li>File paths over vague references.</li>
+<li>Checklists over paragraphs.</li>
+<li>Failed-path log over repeated explanation.</li>
+<li>Evidence pointers over copied raw logs.</li>
+</ul>
+<p>Avoid:</p>
+<ul>
+<li>Raw full chat paste.</li>
+<li>Unverified claims.</li>
+<li>Huge tool outputs.</li>
+<li>Repeated assistant explanations.</li>
+<li>Old plans that were superseded.</li>
+<li>Ambiguous “continue from here” wording.</li>
+</ul>
+<h2>12. Runnable Neutral Templates</h2>
+<h3>12.1 <code>PROJECT-SPEC.md</code></h3>
+<pre><code class="language-md"># PROJECT-SPEC.md
+
+## Purpose
+
+This file stores stable project rules, constraints, definitions, architecture assumptions, and safety requirements. It is the canonical reference for future AI sessions, IDE agents, and human collaborators.
+
+## Project Identity
+
+- Project name:
+- Domain:
+- Owner:
+- Main objective:
+- Current phase:
+- Repository / workspace path:
+
+## Non-Negotiable Rules
+
+- Preserve user intent and project constraints.
+- Do not delete, overwrite, reset, rebase, clean, or move files without explicit approval.
+- Do not expose secrets, credentials, private endpoints, tokens, or keys.
+- Prefer small, reversible, evidence-backed changes.
+- Use structured logs for commands, tests, failures, and decisions.
+- Keep failed paths visible so they are not repeated.
+
+## Technical Stack
+
+| Area | Current Choice | Notes |
+|---|---|---|
+| Language |  |  |
+| Framework |  |  |
+| Runtime |  |  |
+| Database |  |  |
+| Deployment |  |  |
+| Testing |  |  |
+| Documentation | Markdown | State files stored as project artifacts |
+
+## Stable Definitions
+
+- \*\*Load-bearing fact:\*\* A fact, constraint, decision, dependency, or evidence item required for correct continuation.
+- \*\*Failed path:\*\* A tested or discussed approach that should not be repeated unless new evidence changes the decision.
+- \*\*Session handover:\*\* A compressed state file used to migrate work into a new chat or agent session.
+- \*\*Evidence log:\*\* A record of commands, outputs, files, tests, and proof references.
+
+## Maintenance Rules
+
+- Update this file only when stable project rules change.
+- Keep it short and canonical.
+- Put temporary progress in `SESSION-HANDOVER.md`, not here.
+- Put command outputs and test logs in `EVIDENCE-LOG.md`.
+</code></pre>
+<h3>12.2 <code>SESSION-HANDOVER.md</code></h3>
+<pre><code class="language-md"># SESSION-HANDOVER.md
+
+## 1. Context and Objective
+
+- Current objective:
+- Why this session exists:
+- Success criteria:
+- Current phase / gate:
+- Last known good state:
+
+## 2. Current State
+
+- Project status:
+- Active branch / workspace:
+- Files touched:
+- Tests run:
+- Evidence collected:
+- Known blockers:
+
+## 3. Key Decisions Made
+
+| Decision | Reason | Evidence / Reference |
+|---|---|---|
+|  |  |  |
+
+## 4. Failed Approaches / Do Not Repeat
+
+| Failed Path | Why It Failed | Current Rule |
+|---|---|---|
+|  |  |  |
+
+## 5. Load-Bearing Facts
+
+- 
+- 
+- 
+
+## 6. Evidence Pointers
+
+| Evidence Type | Location / Pointer | Notes |
+|---|---|---|
+| Command log |  |  |
+| Test output |  |  |
+| Screenshot |  |  |
+| Commit / diff |  |  |
+| External reference |  |  |
+
+## 7. Open Threads
+
+| Thread | Status | Next Action |
+|---|---|---|
+|  |  |  |
+
+## 8. Next Best Actions
+
+1. 
+2. 
+3. 
+
+## 9. Instructions for the Next Assistant / Agent
+
+- Ingest `PROJECT-SPEC.md` first.
+- Ingest this file second.
+- Do not restart generic planning unless the handoff is incomplete.
+- Respect failed paths.
+- Use evidence pointers instead of asking for already-provided logs.
+- Execute the next best action only after confirming scope and safety.
+</code></pre>
+<h2>13. MCP / Tool-Output Offloading Rule</h2>
+<p>Do not paste large raw tool outputs into the handoff unless the raw text is itself the evidence.</p>
+<p>Preferred pattern:</p>
+<table>
+<thead>
+<tr>
+<th>Tool Output Type</th>
+<th>Store Externally As</th>
+<th>Handoff Reference</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Terminal logs</td>
+<td><code>logs/YYYY-MM-DD-command.log</code></td>
+<td>Path + short result summary</td>
+</tr>
+<tr>
+<td>Test output</td>
+<td><code>EVIDENCE-LOG.md</code> or CI artifact</td>
+<td>Test name + pass/fail + link</td>
+</tr>
+<tr>
+<td>MCP/server response</td>
+<td>JSON artifact or database record</td>
+<td>Tool name + artifact pointer</td>
+</tr>
+<tr>
+<td>Long file scan</td>
+<td>Indexed report</td>
+<td>Summary + file path</td>
+</tr>
+<tr>
+<td>Large diff</td>
+<td>Git commit/diff reference</td>
+<td>Commit hash or patch file</td>
+</tr>
+<tr>
+<td>Screenshots</td>
+<td>Image artifact</td>
+<td>Path + caption</td>
+</tr>
+<tr>
+<td>Agent event stream</td>
+<td><code>logs/agent-events.jsonl</code></td>
+<td>One JSON object per event; append-only</td>
+</tr>
+<tr>
+<td>MCP/tool run archive</td>
+<td><code>logs/mcp-runs.jsonl</code></td>
+<td>Tool name + input hash + result summary + artifact pointer</td>
+</tr>
+<tr>
+<td>Agent config</td>
+<td><code>config/agent-routing.yaml</code></td>
+<td>Routing rules, allowed tools, graph-first policy</td>
+</tr>
+<tr>
+<td>Graphify index</td>
+<td><code>.graphify/</code> or <code>docs/graphify-report/</code></td>
+<td>Queryable repo graph + report pointer</td>
+</tr>
+<tr>
+<td>Graph query result</td>
+<td><code>EVIDENCE-LOG.md</code> + graph node/path</td>
+<td>Store summary, not full graph dump</td>
+</tr>
+</tbody></table>
+<p>The handoff should preserve evidence traceability, not duplicate every byte of evidence.</p>
+<p>JSONL is recommended for high-volume machine evidence because each line can be parsed independently. YAML is recommended for human-editable configuration. Graphify artifacts should be referenced by path and query, not pasted into the handoff.</p>
+<h2>14. Practical Workflow Patterns: Office, Academic, Development, and DevOps</h2>
+<p>The protocol is not limited to software engineering. The same state-management architecture can improve office work, academic work, development work, and DevOps work. The common principle is:</p>
+<blockquote>
+<p>Human decisions stay in Markdown, machine events stay in JSONL, configuration stays in YAML, large project structure goes into Graphify/GraphRAG, and long-term memory goes into MemPalace or another external memory layer.</p>
+</blockquote>
+<h3>14.1 Office Work Workflow</h3>
+<p>Office work usually involves emails, meeting notes, reports, approvals, spreadsheets, and policy documents. The main failure mode is losing decisions across meetings and repeated document revisions.</p>
+<p>Recommended structure:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Recommended Tool / Format</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Meeting summary</td>
+<td>Markdown</td>
+</tr>
+<tr>
+<td>Action list</td>
+<td>Markdown table or <code>TASKS.md</code></td>
+</tr>
+<tr>
+<td>Decision log</td>
+<td><code>DECISIONS.md</code></td>
+</tr>
+<tr>
+<td>Evidence / attachments</td>
+<td>File pointers in <code>EVIDENCE-LOG.md</code></td>
+</tr>
+<tr>
+<td>Repeated records</td>
+<td>CSV / spreadsheet / JSONL</td>
+</tr>
+<tr>
+<td>Team process config</td>
+<td>YAML</td>
+</tr>
+<tr>
+<td>Document graph</td>
+<td>Graphify / GraphRAG if many files exist</td>
+</tr>
+<tr>
+<td>Long-term organizational memory</td>
+<td>MemPalace or internal knowledge base</td>
+</tr>
+</tbody></table>
+<p>Office workflow:</p>
+<pre><code class="language-text">1. Collect meeting notes, emails, file links, and decisions.
+2. Summarize into SESSION-HANDOVER.md.
+3. Store decisions in DECISIONS.md.
+4. Store action items in TASKS.md.
+5. Store file/evidence links in EVIDENCE-LOG.md.
+6. Use YAML for recurring workflow rules.
+7. Use Graphify/GraphRAG if office files become large and interlinked.
+8. Use JSONL only for machine logs or automated workflow events.
+</code></pre>
+<p>Best office use cases:</p>
+<ul>
+<li>meeting handoff;</li>
+<li>management reports;</li>
+<li>procurement follow-up;</li>
+<li>HR/recruitment pipeline;</li>
+<li>client support history;</li>
+<li>policy drafting;</li>
+<li>document review cycles.</li>
+</ul>
+<h3>14.2 Academic Work Workflow</h3>
+<p>Academic work involves literature, citations, thesis drafts, experiments, notes, datasets, supervisor feedback, and publication revisions. The main failure mode is losing the relationship between claim, source, evidence, and revision history.</p>
+<p>Recommended structure:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Recommended Tool / Format</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Thesis/project state</td>
+<td><code>PROJECT-SPEC.md</code></td>
+</tr>
+<tr>
+<td>Current writing status</td>
+<td><code>SESSION-HANDOVER.md</code></td>
+</tr>
+<tr>
+<td>Literature notes</td>
+<td>Markdown / Obsidian</td>
+</tr>
+<tr>
+<td>Citation evidence</td>
+<td><code>EVIDENCE-LOG.md</code></td>
+</tr>
+<tr>
+<td>Dataset/event records</td>
+<td>JSONL</td>
+</tr>
+<tr>
+<td>Research config</td>
+<td>YAML</td>
+</tr>
+<tr>
+<td>Paper/document graph</td>
+<td>Graphify / GraphRAG</td>
+</tr>
+<tr>
+<td>Long-term concept memory</td>
+<td>MemPalace</td>
+</tr>
+<tr>
+<td>Dense concept triggers</td>
+<td>SPR / Cavemem / AAAK only as optional shorthand</td>
+</tr>
+</tbody></table>
+<p>Academic workflow:</p>
+<pre><code class="language-text">1. Store thesis objective, scope, research questions, and constraints in PROJECT-SPEC.md.
+2. Store current chapter state and next writing action in SESSION-HANDOVER.md.
+3. Store claims and references in DECISIONS.md or CLAIM-REGISTER.md.
+4. Store source evidence and page pointers in EVIDENCE-LOG.md.
+5. Use JSONL for literature extraction records or experiment logs.
+6. Use YAML for experiment configuration and review workflow.
+7. Use Graphify/GraphRAG to map papers, notes, diagrams, and chapters.
+8. Use MemPalace for durable recall of definitions, theories, and project-specific vocabulary.
+9. Keep AAAK/Cavemem as shorthand only; never replace formal citations.
+</code></pre>
+<p>Best academic use cases:</p>
+<ul>
+<li>thesis chapter continuity;</li>
+<li>literature review mapping;</li>
+<li>claim-to-source register;</li>
+<li>research gap matrix;</li>
+<li>experiment log tracking;</li>
+<li>supervisor feedback tracking;</li>
+<li>manuscript revision workflow.</li>
+</ul>
+<h3>14.3 Development Work Workflow</h3>
+<p>Development work involves source code, architecture, tests, issues, branches, commits, logs, and deployment constraints. The main failure mode is the AI assistant repeatedly scanning files, forgetting failed patches, or editing outside safe scope.</p>
+<p>Recommended structure:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Recommended Tool / Format</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repo rules</td>
+<td><code>PROJECT-SPEC.md</code></td>
+</tr>
+<tr>
+<td>Current branch/session state</td>
+<td><code>SESSION-HANDOVER.md</code></td>
+</tr>
+<tr>
+<td>Failed patches</td>
+<td><code>FAILED-PATHS.md</code></td>
+</tr>
+<tr>
+<td>Architecture decisions</td>
+<td><code>DECISIONS.md</code></td>
+</tr>
+<tr>
+<td>Test/run evidence</td>
+<td><code>EVIDENCE-LOG.md</code> + JSONL</td>
+</tr>
+<tr>
+<td>Agent config</td>
+<td>YAML</td>
+</tr>
+<tr>
+<td>Repo graph</td>
+<td>Graphify / Graphifyy</td>
+</tr>
+<tr>
+<td>Cross-session memory</td>
+<td>MemPalace</td>
+</tr>
+<tr>
+<td>Short agent summaries</td>
+<td>Caveman / Cavemem</td>
+</tr>
+</tbody></table>
+<p>Development workflow:</p>
+<pre><code class="language-text">1. Read PROJECT-SPEC.md.
+2. Read SESSION-HANDOVER.md.
+3. Query Graphify for relevant files and dependencies.
+4. Open only necessary raw files.
+5. Apply small patch.
+6. Run focused tests.
+7. Log results in EVIDENCE-LOG.md or EVIDENCE-LOG.jsonl.
+8. Record failed approaches in FAILED-PATHS.md.
+9. Record architecture decisions in DECISIONS.md.
+10. Refresh Graphify if structure changed.
+</code></pre>
+<p>Best development use cases:</p>
+<ul>
+<li>codebase onboarding;</li>
+<li>“which file does what” analysis;</li>
+<li>dependency tracing;</li>
+<li>bug localization;</li>
+<li>safe patch planning;</li>
+<li>test evidence collection;</li>
+<li>refactor planning;</li>
+<li>PR/commit handoff.</li>
+</ul>
+<h3>14.4 DevOps / SRE Workflow</h3>
+<p>DevOps work involves servers, deployments, CI/CD, logs, incidents, rollback plans, secrets, monitoring, and audit trails. The main failure mode is mixing raw logs, credentials, and unstable operational context into chat.</p>
+<p>Recommended structure:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Recommended Tool / Format</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Environment rules</td>
+<td><code>PROJECT-SPEC.md</code></td>
+</tr>
+<tr>
+<td>Active incident state</td>
+<td><code>SESSION-HANDOVER.md</code></td>
+</tr>
+<tr>
+<td>Failed commands / blocked paths</td>
+<td><code>FAILED-PATHS.md</code></td>
+</tr>
+<tr>
+<td>Deployment decisions</td>
+<td><code>DECISIONS.md</code></td>
+</tr>
+<tr>
+<td>Command/test/deploy logs</td>
+<td>JSONL + external log files</td>
+</tr>
+<tr>
+<td>Runbook config</td>
+<td>YAML</td>
+</tr>
+<tr>
+<td>Infrastructure graph</td>
+<td>Graphify / GraphRAG where applicable</td>
+</tr>
+<tr>
+<td>Secret handling</td>
+<td>OWASP-aligned redaction</td>
+</tr>
+<tr>
+<td>Long-term incident memory</td>
+<td>MemPalace / internal KB</td>
+</tr>
+</tbody></table>
+<p>DevOps workflow:</p>
+<pre><code class="language-text">1. Define environment, access rules, and safety limits in PROJECT-SPEC.md.
+2. Store incident/deployment state in SESSION-HANDOVER.md.
+3. Store raw logs externally, not inside chat.
+4. Store one-line event summaries in JSONL.
+5. Store runbook and routing rules in YAML.
+6. Use Graphify/GraphRAG for infrastructure docs, scripts, and repo dependencies.
+7. Redact all secrets before saving state.
+8. Record failed commands in FAILED-PATHS.md.
+9. Record rollback/approval decisions in DECISIONS.md.
+10. Update handoff after deploy, rollback, or incident resolution.
+</code></pre>
+<p>Best DevOps use cases:</p>
+<ul>
+<li>incident handoff;</li>
+<li>VPS/server troubleshooting;</li>
+<li>deployment checklist;</li>
+<li>CI/CD failure analysis;</li>
+<li>rollback planning;</li>
+<li>command evidence logging;</li>
+<li>infrastructure documentation;</li>
+<li>security audit prep.</li>
+</ul>
+<h3>14.5 Universal Workflow Rule</h3>
+<p>Across all work types:</p>
+<pre><code class="language-text">Markdown = human continuity.
+YAML = configuration and routing.
+JSONL = machine evidence and event streams.
+Graphify = codebase/project graph.
+GraphRAG = document/corpus graph retrieval.
+MemPalace = long-term memory.
+Caveman/Cavemem = compact status language.
+AAAK = experimental shorthand only.
+Git = version history and audit.
+</code></pre>
+<p>Do not treat token-saving as a single tool decision. Treat it as a workflow architecture.</p>
+<h2>15. Tool Credibility and Benchmark Policy</h2>
+<p>This protocol uses two classes of tools:</p>
+<ol>
+<li><strong>Established engineering formats</strong> — Markdown, YAML, JSON, JSONL, CSV, Git.</li>
+<li><strong>Emerging AI workflow tools</strong> — TOON, Caveman/Cavemem, MemPalace/AAAK, Graphify/Graphifyy.</li>
+</ol>
+<p>Established formats can be recommended directly. Emerging tools can be recommended as optional workflow accelerators, but hard performance claims require local verification.</p>
+<table>
+<thead>
+<tr>
+<th>Tool / Method</th>
+<th>Safe Claim</th>
+<th>Unsafe Claim Without Benchmark</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JSONL</td>
+<td>Good for append-only logs and event streams</td>
+<td>“Always saves X% tokens”</td>
+</tr>
+<tr>
+<td>YAML</td>
+<td>Good for human-editable config</td>
+<td>“Always better than JSON for LLMs”</td>
+</tr>
+<tr>
+<td>TOON</td>
+<td>May reduce tokens for repeated records</td>
+<td>“Proven universal best format”</td>
+</tr>
+<tr>
+<td>Caveman / Cavemem</td>
+<td>Can reduce output verbosity</td>
+<td>“Guaranteed 75% saving with no information loss”</td>
+</tr>
+<tr>
+<td>MemPalace</td>
+<td>Can act as local external memory</td>
+<td>“Guaranteed perfect recall”</td>
+</tr>
+<tr>
+<td>AAAK</td>
+<td>Experimental shorthand/dictionary layer</td>
+<td>“Lossless 30x compression” unless reproduced</td>
+</tr>
+<tr>
+<td>Graphify / Graphifyy</td>
+<td>Can reduce repeated raw-file scanning by using a repo graph</td>
+<td>“Guaranteed 70x token saving” unless reproduced locally</td>
+</tr>
+<tr>
+<td>GraphRAG</td>
+<td>Useful graph-based retrieval architecture</td>
+<td>“Solves all long-context problems”</td>
+</tr>
+</tbody></table>
+<p>Hard claims require:</p>
+<ul>
+<li>exact model;</li>
+<li>exact tokenizer;</li>
+<li>benchmark dataset;</li>
+<li>baseline;</li>
+<li>repeated runs;</li>
+<li>loss check;</li>
+<li>retrieval-quality check;</li>
+<li>script or reproducible procedure.</li>
+</ul>
+<h2>16. Worked Example: 50,000-Token Session to 1,000-Word Handoff</h2>
+<p>To illustrate the compression power of the protocol, consider a 50,000-token debugging session dealing with a complex database migration error. Instead of passing the entire transcript, the final <code>SESSION-HANDOVER.md</code> distills the state into a concise, actionable format.</p>
+<h3>Sample <code>SESSION-HANDOVER.md</code></h3>
+<p><strong>1. Context &amp; Objective</strong>
+We are migrating the <code>users</code> table to a partitioned schema in PostgreSQL 15. The objective is to complete the migration without downtime.</p>
+<p><strong>2. Technical Stack &amp; Constraints</strong></p>
+<ul>
+<li>Database: PostgreSQL 15 (See <code>PROJECT-SPEC.md</code> for connection details).</li>
+<li>Constraints: No table locks exceeding 100ms. Must use concurrent index creation.</li>
+</ul>
+<p><strong>3. Key Progress &amp; Decisions Made</strong></p>
+<ul>
+<li>Migrated 80% of historical data into <code>users\_old</code> partition.</li>
+<li><em>Decision</em>: We opted for logical replication for the live data sync instead of triggers to minimize write latency.</li>
+</ul>
+<p><strong>4. Failed Approaches &amp; Debugging Detours</strong></p>
+<ul>
+<li><em>Failed</em>: Using <code>pg\_repack</code> caused a deadlock during the final swap phase. Do not use <code>pg\_repack</code> for this specific table.</li>
+<li><em>Failed</em>: Trigger-based replication slowed down application <code>INSERT</code> statements by 400%.</li>
+</ul>
+<p><strong>5. Current State &amp; &quot;Load-Bearing&quot; SPRs</strong></p>
+<ul>
+<li>Logical replication slot <code>migration\_slot</code> is active and 5 seconds behind primary.</li>
+<li>The <code>users\_new</code> table is structurally identical but includes the new partitioning keys.</li>
+<li>Application traffic is still routing to the original <code>users</code> table.</li>
+</ul>
+<p><strong>6. Open Threads &amp; Next Best Actions</strong></p>
+<ul>
+<li><em>Blocker</em>: The logical replication worker occasionally restarts due to a network timeout.</li>
+<li><em>Next Action</em>: Adjust the <code>wal\_sender\_timeout</code> parameter in <code>postgresql.conf</code> and monitor the replication lag.</li>
+</ul>
+<p><strong>7. Instructions for the New Assistant</strong>
+Acknowledge this state and begin by generating a script to safely adjust <code>wal\_sender\_timeout</code> on the primary database, then provide a query to verify replication lag.</p>
+<h2>17. When Full State Management Is Not Necessary</h2>
+<p>Not every AI conversation needs a formal migration protocol. Full handoff documents are most useful when continuity, reproducibility, evidence tracking, or cost control matters.</p>
+<p>Use a lightweight note instead of a full protocol when:</p>
+<ul>
+<li>The conversation is short.</li>
+<li>No decision has been made.</li>
+<li>No code, document, evidence, or test result must be preserved.</li>
+<li>The next session does not need to reproduce the reasoning chain.</li>
+<li>The discussion is exploratory and direction is still uncertain.</li>
+</ul>
+<p>Minimal lightweight note:</p>
+<pre><code class="language-md">Objective:
+Decision:
+Next action:
+Risk:
+</code></pre>
+<p>Use the full protocol only when the project state must survive the chat window.</p>
+<h2>18. Conclusion: Active State Management</h2>
+<p>The management of long-form AI sessions requires a shift in user behavior from &quot;passive chatting&quot; to &quot;active state management.&quot; The slowing and hanging of web interfaces are predictable symptoms of reaching the technical limits of the transformer architecture and the browser&#39;s DOM rendering. To maintain high-quality results, users should adopt the following strategic protocols:</p>
+<ul>
+<li><strong>Proactive Compaction</strong>: Do not wait for the interface to hang. When a session reaches roughly 60-75% of its estimated context window as a guideline, or when the &quot;quality of reasoning&quot; begins to drift, trigger the Handoff Protocol.</li>
+<li><strong>Structural Preference</strong>: Markdown is a strong default for migration documents. The hierarchical nature of headings and tables provides &quot;attention anchors&quot; that help the fresh AI instance prioritize the most critical information.</li>
+<li><strong>The Failed-Path Log</strong>: Ensure that every handoff document includes a &quot;What Not to Do&quot; section. This is the single most effective way to prevent the new session from wasting tokens on previously solved problems.</li>
+<li><strong>Symbolic Priming</strong>: For highly technical sessions, incorporate Sparse Priming Representations to bypass the &quot;verbosity trap&quot; and tap into the model&#39;s latent knowledge more efficiently.</li>
+<li><strong>Externalized Truth</strong>: Maintain a <code>PROJECT-SPEC.md</code> and <code>SESSION-HANDOVER.md</code> file locally or in a &quot;Project&quot; environment. Use these as the &quot;canonical state&quot; and the chat window merely as a &quot;volatile execution environment&quot;.</li>
+</ul>
+<p>By implementing these protocols, users can transcend the limitations of fixed context windows and browser-side instability, ensuring that their AI-assisted projects can scale to any degree of complexity without the loss of critical institutional knowledge.</p>
+<h2>19. References</h2>
+<h3>Core Technical References</h3>
+<p>[1] A. Vaswani et al., “Attention Is All You Need,” Advances in Neural Information Processing Systems, 2017.<br>[2] T. Dao et al., “FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness,” 2022.<br>[3] N. F. Liu et al., “Lost in the Middle: How Language Models Use Long Contexts,” Transactions of the Association for Computational Linguistics, vol. 12, pp. 157–173, 2024.<br>[4] OpenAI, “How to count tokens with tiktoken,” OpenAI Developers Cookbook.<br>[5] Anthropic, “Token counting,” Claude API Documentation.<br>[6] Meta AI, “Introducing Meta Llama 3,” 2024.<br>[7] Microsoft, “GraphRAG,” official documentation.<br>[8] Git SCM, “About Version Control,” official Git documentation.<br>[9] OWASP Cheat Sheet Series, “Secrets Management Cheat Sheet.”<br>[10] JSON Lines, “Documentation for the JSON Lines text file format.”<br>[11] YAML Project, “YAML Ain’t Markup Language.”<br>[12] TOON Format, “Token-Oriented Object Notation specification.”<br>[13] Graphify, “AI coding assistant skill / Graphifyy package documentation.”<br>[14] MemPalace, “Official repository and documentation.”<br>[15] J. Brussee, “Caveman: token-compressed assistant responses and memory compression.”  </p>
+<h2>20. Further Reading</h2>
+<ul>
+<li>Anthropic Engineering, “Effective context engineering for AI agents.”</li>
+<li>Anthropic Cookbook, “Context engineering: memory, compaction, and tool clearing.”</li>
+<li>Factory.ai, “Compressing Context.”</li>
+<li>Factory.ai, “Evaluating Context Compression for AI Agents.”</li>
+<li>SitePoint, “Optimizing Token Usage: Context Compression Techniques.”</li>
+<li>Markdown Guide, “Getting Started.”</li>
+<li>Microsoft Research Blog, “GraphRAG: Improving global search via dynamic community selection.”</li>
+<li>Git SCM Book, “About Version Control.”</li>
+<li>OpenAI Cookbook, “How to count tokens with tiktoken.”</li>
+<li>Community/practitioner notes on session handoff, prompt compression, and AI workflow state machines.</li>
+<li>MemPalace AAAK issue/RFC notes on static dictionary and positional schema.</li>
+<li>Graphify/Graphifyy practitioner examples and token-saving claims.</li>
+<li>Caveman/Cavemem examples and local benchmark notes.</li>
+</ul>
+<h2>21. Appendix: Benchmark Methodology for Serialization Formats</h2>
+<p>When reporting token-efficiency or reasoning-accuracy comparisons between CSV, JSON, YAML, Markdown, XML, or other formats, include the following metadata:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required Detail</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Model tested</td>
+<td>Exact model name and version</td>
+</tr>
+<tr>
+<td>Tokenizer</td>
+<td>Exact tokenizer or API token-counting method</td>
+</tr>
+<tr>
+<td>Input data</td>
+<td>Dataset size, structure, number of rows/items, nesting depth</td>
+</tr>
+<tr>
+<td>Task type</td>
+<td>Retrieval, classification, reasoning, extraction, summarization, planning</td>
+</tr>
+<tr>
+<td>Prompt design</td>
+<td>Full prompt or prompt template</td>
+</tr>
+<tr>
+<td>Scoring method</td>
+<td>Exact metric: accuracy, F1, exact match, human rating, cost, latency</td>
+</tr>
+<tr>
+<td>Sample count</td>
+<td>Number of test cases</td>
+</tr>
+<tr>
+<td>Repetition</td>
+<td>Number of runs and temperature setting</td>
+</tr>
+<tr>
+<td>Limitations</td>
+<td>Known weaknesses and non-generalizable assumptions</td>
+</tr>
+</tbody></table>
+<p>Benchmark numbers should be presented as task-specific indicators, not universal truths. Format performance depends on the model, tokenizer, prompt, data structure, and scoring method.</p>
+<h2>22. Appendix: Migration Checklist</h2>
+<p>Before extraction:</p>
+<ul>
+<li>Confirm the current objective is still valid.</li>
+<li>Identify load-bearing facts.</li>
+<li>Identify decisions already made.</li>
+<li>Identify failed paths.</li>
+<li>Identify evidence pointers.</li>
+<li>Identify next executable action.</li>
+</ul>
+<p>Before saving files:</p>
+<ul>
+<li>Redact secrets.</li>
+<li>Confirm file paths are accurate.</li>
+<li>Confirm evidence pointers resolve.</li>
+<li>Confirm no raw logs are pasted unnecessarily.</li>
+<li>Confirm the core file set is complete.</li>
+</ul>
+<p>Before starting new chat:</p>
+<ul>
+<li>Attach or paste <code>PROJECT-SPEC.md</code>.</li>
+<li>Attach or paste <code>SESSION-HANDOVER.md</code>.</li>
+<li>Include <code>FAILED-PATHS.md</code>, <code>DECISIONS.md</code>, and <code>EVIDENCE-LOG.md</code> if available.</li>
+<li>Paste Prompt B.</li>
+<li>Ask the new assistant to summarize objective, blockers, failed paths, and next action before proceeding.</li>
+</ul>
+
+<nav class="bottomnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+
+<footer class="doc-footer">
+  <p><strong>Author:</strong> Shyed Shahriar</p>
+  <p><strong>Content Type:</strong> Local RAG RAFT System</p>
+  <p><strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p><strong>Reference anchors:</strong>
+    <a href="https://docs.mathjax.org/en/v4.1/input/tex/delimiters.html">MathJax delimiters</a> |
+    <a href="https://proceedings.neurips.cc/paper_files/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html">RAG</a> |
+    <a href="https://arxiv.org/abs/2403.10131">RAFT</a> |
+    <a href="https://microsoft.github.io/graphrag/">GraphRAG</a>
+  </p>
+</footer>
+
+</main>
+</body>
+</html>

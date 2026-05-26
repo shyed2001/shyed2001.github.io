@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بروتوكول مرونة السياق — النسخة العربية الكاملة</title>
+
+<style>
+:root{--bg:#ffffff;--fg:#1f2937;--muted:#6b7280;--border:#d1d5db;--accent:#0f766e;--accent2:#115e59;--code:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.65}
+.container{max-width:1050px;margin:0 auto;padding:24px}
+header,.doc-footer{border:1px solid var(--border);border-radius:14px;padding:18px 22px;background:#fafafa;margin:18px 0}
+h1{font-size:1.9rem;line-height:1.25;margin:.5rem 0 1rem}
+h2{border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:2rem}
+h3{margin-top:1.4rem}
+.meta{color:var(--muted);font-size:.95rem}
+.topnav,.bottomnav{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.bottomnav{position:static;border-top:1px solid var(--border);border-bottom:0;margin-top:28px}
+.topnav a,.bottomnav a{background:var(--accent);color:white;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:650}
+.topnav a:hover,.bottomnav a:hover{background:var(--accent2)}
+pre{background:var(--code);padding:16px;border-radius:10px;overflow:auto;border:1px solid var(--border);white-space:pre-wrap}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid var(--border);padding:8px 10px;vertical-align:top}
+th{background:#f3f4f6}
+blockquote{border-left:4px solid var(--accent);margin:1rem 0;padding:.3rem 1rem;background:#f8fffd;color:#374151}
+.math-display{text-align:center;margin:18px 0;padding:12px;background:#fbfbfb;border:1px solid var(--border);border-radius:10px}
+.patchbox{border-left:5px solid var(--accent);background:#f8fffd;padding:14px 18px;margin:18px 0;border-radius:8px}
+a{color:#0f766e}
+[dir="rtl"]{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+.badge{display:inline-block;background:#e0f2f1;color:#115e59;border:1px solid #99f6e4;border-radius:999px;padding:2px 10px;margin:2px;font-size:.85rem}
+</style>
+
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]'],['$$','$$']],processEscapes:true},svg:{fontCache:'global'}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+<main class="container">
+
+<header>
+  <h1>بروتوكول مرونة السياق — النسخة العربية الكاملة</h1>
+  <p class="meta"><strong>Content Type:</strong> Local RAG RAFT System | <strong>Author:</strong> Shyed Shahriar | <strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p>نسخة عربية كاملة ذات بنية مماثلة للنسخة الإنجليزية.</p>
+</header>
+
+<section><h2>الملخص التنفيذي</h2><p>المحادثة الطويلة مؤقتة، أما حالة المشروع فيجب أن تكون دائمة. Markdown للحالة البشرية، JSONL للأدلة الآلية، YAML للتوجيه، Graphify/GraphRAG للرسوم، وGit للتدقيق.</p></section>
+<section><h2>١. المقدمة</h2><p>عندما يكبر السياق تزداد التكلفة والكمون وصعوبة الاسترجاع وضغط واجهة المتصفح. الحل هو نقل الحالة المضغوطة لا نقل transcript كامل.</p></section>
+<section><h2>٢. السقف التقني</h2><p>انتباه Transformer ينتج تفاعلات زوجية، لكن الكلفة العملية تتأثر أيضاً بذاكرة KV والتجميع والعتاد والأنوية والكمّ وخدمة المزود.</p></section>
+<div class="math-display">\[\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V\]</div>
+<section><h2>٣. آليات الترميز</h2><p>حساب الرموز يختلف حسب النموذج: OpenAI وClaude وLlama والأنظمة المحلية ليست متطابقة.</p></section>
+<section><h2>٤. صيغ التسلسل</h2><p>Markdown للتسليم البشري، YAML للإعدادات، JSONL للسجلات والأدلة، JSON للتبادل الصارم، وTOON خيار ناشئ للبيانات المتكررة.</p></section>
+<section><h2>٥. ضغط السياق</h2><p>الضغط يحفظ الحقائق والقرارات والأدلة والمسارات الفاشلة ويحذف الحشو والتكرار.</p></section>
+<section><h2>٦. خطوط الإدخال الآلية</h2><p>يمكن إدخال ملفات التسليم في Vector RAG وGraphRAG وGraphify وMemPalace والفهارس المحلية.</p></section>
+<section><h2>٧. الضغط الرمزي والتمهيد المتناثر</h2><p>التمهيد المتناثر يساعد في استعادة السياق، لكنه لا يستبدل الأدلة الرسمية.</p></section>
+<section><h2>٨. آلة الحالة المستمرة</h2><p>PROJECT-SPEC للقواعد الثابتة، SESSION-HANDOVER للحالة الحالية، FAILED-PATHS للذاكرة السلبية، DECISIONS للقرارات، EVIDENCE-LOG للأدلة.</p></section>
+<section><h2>٩. امتداد بنية CCGSC</h2><p>يعمل CCGSC في Local RAG RAFT كنسيج تنفيذ ومزامنة بين Edge وDew وCluster وGrid وCloud control.</p></section>
+<div class="patchbox"><p><strong>فقرة CCGSC:</strong> يُستخدم CCGSC كمعمارية خاصة بالمشروع لتنسيق عمل الذكاء الاصطناعي الموزع. في Local RAG RAFT يعمل كنسيج تنفيذ ومزامنة؛ Local RAG يسترجع الأدلة، RAFT يحسن التكيف مع المجال، Graphify/GraphRAG يكشفان العلاقات، وMarkdown/JSONL/YAML تحفظ الحالة والسياسة والأدلة.</p></div>
+<section><h2>١٠. مصفوفة القرار</h2><p>مصفوفة القرار تلخص متى يستخدم كل تنسيق أو أداة.</p></section>
+<section><h2>١١. دليل التنفيذ</h2><p>في المحادثة القديمة استخدم Prompt A للاستخراج؛ في الجديدة استخدم Prompt B للإدخال.</p></section>
+<pre><code class="language-md">Role: You are a project-state extraction engine.
+Task: Compress this conversation into durable project state.
+Output: PROJECT-SPEC.md, SESSION-HANDOVER.md, FAILED-PATHS.md, DECISIONS.md, EVIDENCE-LOG.md.</code></pre>
+<section><h2>١٢. قوالب قابلة للتشغيل</h2><p>قوالب PROJECT-SPEC.md وSESSION-HANDOVER.md قابلة للاستخدام مباشرة.</p></section>
+<section><h2>١٣. تفريغ مخرجات الأدوات</h2><p>لا تلصق مخرجات الأدوات الكبيرة؛ خزّنها خارجياً وضع مؤشراً وملخصاً.</p></section>
+<section><h2>١٤. أنماط سير العمل</h2><p>المكتب: قرارات؛ الأكاديمية: claim/source؛ التطوير: Graphify-first؛ DevOps: incidents وأدلة وأسرار آمنة.</p></section>
+<section><h2>١٥. مصداقية الأدوات وسياسة القياس</h2><p>يجب فصل الصيغ المستقرة عن الأدوات الناشئة؛ لا ادعاءات حادة دون benchmark.</p></section>
+<section><h2>١٦. مثال عملي</h2><p>يمكن ضغط جلسة تصحيح ضخمة إلى هدف وقيود وقرارات ومسارات فاشلة وحالة وخطوة تالية.</p></section>
+<section><h2>١٧. متى لا يكون ضرورياً</h2><p>المحادثات القصيرة لا تحتاج protocol كاملاً؛ يكفي الهدف والقرار والخطوة التالية والخطر.</p></section>
+<section><h2>١٨. الخاتمة</h2><p>النتيجة: الانتقال من محادثة عابرة إلى إدارة حالة نشطة.</p></section>
+<section><h2>١٩. المراجع</h2><p>المراجع تشمل Transformer وFlashAttention وRAG وRAFT وGraphRAG وGit وOWASP وJSONL وYAML وGraphify.</p></section>
+<section><h2>٢٠. قراءات إضافية</h2><p>قراءات إضافية حول context engineering وcompression وGraphRAG وMarkdown.</p></section>
+<section><h2>٢١. منهجية القياس</h2><p>أي benchmark يحتاج النموذج وtokenizer وdataset وbaseline وmetric وrepetitions وloss check وreproducibility.</p></section>
+<section><h2>٢٢. قائمة فحص الهجرة</h2><p>قائمة الهجرة: objective، facts، decisions، failed paths، evidence، redaction، core files، Prompt B.</p></section>
+
+<section><h2>Reference Hyperlinks</h2>
+<ul>
+<li><a href="https://docs.mathjax.org/en/v4.1/input/tex/delimiters.html">MathJax TeX/LaTeX delimiters</a></li>
+<li><a href="https://proceedings.neurips.cc/paper_files/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html">Retrieval-Augmented Generation</a></li>
+<li><a href="https://arxiv.org/abs/2403.10131">RAFT paper</a></li>
+<li><a href="https://microsoft.github.io/graphrag/">Microsoft GraphRAG</a></li>
+</ul></section>
+
+
+<nav class="bottomnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+
+<footer class="doc-footer">
+  <p><strong>Author:</strong> Shyed Shahriar</p>
+  <p><strong>Content Type:</strong> Local RAG RAFT System</p>
+  <p><strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p><strong>Reference anchors:</strong>
+    <a href="https://docs.mathjax.org/en/v4.1/input/tex/delimiters.html">MathJax delimiters</a> |
+    <a href="https://proceedings.neurips.cc/paper_files/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html">RAG</a> |
+    <a href="https://arxiv.org/abs/2403.10131">RAFT</a> |
+    <a href="https://microsoft.github.io/graphrag/">GraphRAG</a>
+  </p>
+</footer>
+
+</main>
+</body>
+</html>

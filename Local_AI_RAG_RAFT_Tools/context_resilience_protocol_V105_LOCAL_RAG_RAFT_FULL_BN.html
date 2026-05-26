@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Resilience Protocol — পূর্ণ বাংলা সংস্করণ</title>
+
+<style>
+:root{--bg:#ffffff;--fg:#1f2937;--muted:#6b7280;--border:#d1d5db;--accent:#0f766e;--accent2:#115e59;--code:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.65}
+.container{max-width:1050px;margin:0 auto;padding:24px}
+header,.doc-footer{border:1px solid var(--border);border-radius:14px;padding:18px 22px;background:#fafafa;margin:18px 0}
+h1{font-size:1.9rem;line-height:1.25;margin:.5rem 0 1rem}
+h2{border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:2rem}
+h3{margin-top:1.4rem}
+.meta{color:var(--muted);font-size:.95rem}
+.topnav,.bottomnav{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.bottomnav{position:static;border-top:1px solid var(--border);border-bottom:0;margin-top:28px}
+.topnav a,.bottomnav a{background:var(--accent);color:white;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:650}
+.topnav a:hover,.bottomnav a:hover{background:var(--accent2)}
+pre{background:var(--code);padding:16px;border-radius:10px;overflow:auto;border:1px solid var(--border);white-space:pre-wrap}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid var(--border);padding:8px 10px;vertical-align:top}
+th{background:#f3f4f6}
+blockquote{border-left:4px solid var(--accent);margin:1rem 0;padding:.3rem 1rem;background:#f8fffd;color:#374151}
+.math-display{text-align:center;margin:18px 0;padding:12px;background:#fbfbfb;border:1px solid var(--border);border-radius:10px}
+.patchbox{border-left:5px solid var(--accent);background:#f8fffd;padding:14px 18px;margin:18px 0;border-radius:8px}
+a{color:#0f766e}
+[dir="rtl"]{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+.badge{display:inline-block;background:#e0f2f1;color:#115e59;border:1px solid #99f6e4;border-radius:999px;padding:2px 10px;margin:2px;font-size:.85rem}
+</style>
+
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]'],['$$','$$']],processEscapes:true},svg:{fontCache:'global'}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+<main class="container">
+
+<header>
+  <h1>Context Resilience Protocol — পূর্ণ বাংলা সংস্করণ</h1>
+  <p class="meta"><strong>Content Type:</strong> Local RAG RAFT System | <strong>Author:</strong> Shyed Shahriar | <strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p>পূর্ণ কাঠামোগত বাংলা HTML সংস্করণ।</p>
+</header>
+
+<section><h2>নির্বাহী সারসংক্ষেপ</h2><p>দীর্ঘ AI chat volatile; durable project state দরকার। Markdown human handoff, JSONL machine evidence, YAML routing, Graphify/GraphRAG graph layer, MemPalace external memory, Git audit trail।</p></section>
+<section><h2>১. ভূমিকা</h2><p>Context বড় হলে token cost, retrieval difficulty, latency, DOM pressure ও instruction drift বাড়ে। তাই পুরো transcript নয়, compact state migration দরকার।</p></section>
+<section><h2>২. প্রযুক্তিগত সীমা</h2><p>Transformer attention pairwise token interaction তৈরি করে; practical cost KV cache, batching, hardware, kernel, quantization ও serving design দ্বারা নির্ধারিত।</p></section>
+<div class="math-display">\[\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V\]</div>
+<section><h2>৩. Tokenization প্রক্রিয়া</h2><p>Token counting model-specific। OpenAI, Claude, Llama ও local runtime আলাদা tokenization ব্যবহার করে।</p></section>
+<section><h2>৪. Serialization Format</h2><p>Markdown human handoff-এর জন্য; YAML config-এর জন্য; JSONL event/evidence log-এর জন্য; JSON strict API-এর জন্য; TOON emerging compact payload।</p></section>
+<section><h2>৫. Context Compression</h2><p>Compression মানে load-bearing facts রাখা এবং filler, duplicated explanation, raw logs বাদ দেওয়া।</p></section>
+<section><h2>৬. Automated Ingestion Pipeline</h2><p>Handoff files vector RAG, GraphRAG, Graphify, MemPalace এবং local index-এ ingest করা যায়।</p></section>
+<section><h2>৭. Symbolic Compression ও Sparse Priming</h2><p>SPR dense trigger হিসেবে কাজ করে, কিন্তু formal evidence-এর বদলে ব্যবহার করা যাবে না।</p></section>
+<section><h2>৮. Persistent State Machine</h2><p>PROJECT-SPEC stable rules রাখে; SESSION-HANDOVER current state; FAILED-PATHS negative memory; DECISIONS rationale; EVIDENCE-LOG proof pointer।</p></section>
+<section><h2>৯. CCGSC Infrastructure Extension</h2><p>CCGSC Local RAG RAFT execution fabric: Edge, Dew/offline-first, Cluster, Grid, Cloud control layer সমন্বয় করে।</p></section>
+<div class="patchbox"><p><strong>CCGSC append paragraph:</strong> CCGSC বা Cloud Crowd Cluster Grid Supercomputing distributed AI work সমন্বয়ের project-specific architecture। Local RAG RAFT system-এ এটি execution ও synchronization fabric; local RAG evidence retrieve করে, RAFT-style domain adaptation curated corpus অনুযায়ী model behavior উন্নত করে, Graphify/GraphRAG structural relationship প্রকাশ করে, এবং Markdown/JSONL/YAML state file control, evidence ও routing policy সংরক্ষণ করে।</p></div>
+<section><h2>১০. Decision Matrix</h2><p>Decision matrix format/tool selection rules সংক্ষেপে দেয়।</p></section>
+<section><h2>১১. Execution Guide</h2><p>Old chat: extraction prompt. New chat: ingestion prompt. দুইটি prompt আলাদা রাখতে হবে।</p></section>
+<pre><code class="language-md">Role: You are a project-state extraction engine.
+Task: Compress this conversation into durable project state.
+Output: PROJECT-SPEC.md, SESSION-HANDOVER.md, FAILED-PATHS.md, DECISIONS.md, EVIDENCE-LOG.md.</code></pre>
+<section><h2>১২. Runnable Templates</h2><p>PROJECT-SPEC.md এবং SESSION-HANDOVER.md template সরাসরি repo/docs/ai-state ফোল্ডারে ব্যবহারযোগ্য।</p></section>
+<section><h2>১৩. Tool-Output Offloading</h2><p>Raw tool output external log/artifact-এ রাখুন; handoff-এ summary/pointer দিন।</p></section>
+<section><h2>১৪. Workflow Patterns</h2><p>Office: meeting/decision; Academic: claim/source; Dev: Graphify-first patching; DevOps: incident/evidence/secret-safe handoff।</p></section>
+<section><h2>১৫. Tool Credibility ও Benchmark Policy</h2><p>Stable formats বনাম emerging tools আলাদা রাখতে হবে; hard saving claims benchmark ছাড়া করা যাবে না।</p></section>
+<section><h2>১৬. Worked Example</h2><p>৫০,০০০-token debugging session objective, constraints, decisions, failed paths, state, next action হিসেবে compact করা যায়।</p></section>
+<section><h2>১৭. কখন দরকার নেই</h2><p>Short casual chat হলে full protocol দরকার নেই। Objective/Decision/Next Action/Risk যথেষ্ট।</p></section>
+<section><h2>১৮. উপসংহার</h2><p>Passive chatting থেকে active state management-এ যেতে হবে। Chat volatile; project state persistent।</p></section>
+<section><h2>১৯. References</h2><p>References: Transformer, FlashAttention, Lost in the Middle, RAG, RAFT, GraphRAG, tokenization, Git, OWASP, JSONL, YAML, Graphify।</p></section>
+<section><h2>২০. Further Reading</h2><p>Further reading: context engineering, compression, GraphRAG, Markdown, practitioner notes।</p></section>
+<section><h2>২১. Benchmark Methodology</h2><p>Benchmark claims: model, tokenizer, dataset, baseline, metric, repetitions, loss check, reproducibility লাগবে।</p></section>
+<section><h2>২২. Migration Checklist</h2><p>Migration checklist: objective, facts, decisions, failed paths, evidence, redaction, core files, Prompt B।</p></section>
+
+<section><h2>Reference Hyperlinks</h2>
+<ul>
+<li><a href="https://docs.mathjax.org/en/v4.1/input/tex/delimiters.html">MathJax TeX/LaTeX delimiters</a></li>
+<li><a href="https://proceedings.neurips.cc/paper_files/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html">Retrieval-Augmented Generation</a></li>
+<li><a href="https://arxiv.org/abs/2403.10131">RAFT paper</a></li>
+<li><a href="https://microsoft.github.io/graphrag/">Microsoft GraphRAG</a></li>
+</ul></section>
+
+
+<nav class="bottomnav">
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_EN.html">Full English</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_BN.html">পূর্ণ বাংলা</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_FULL_AR.html">العربية الكاملة</a>
+  <a href="context_resilience_protocol_V105_LOCAL_RAG_RAFT_COMPRESSED_EN.html">Compressed English</a>
+  <a href="V105_CCGSC_APPEND_ONLY_PARAGRAPH_PATCH.html">CCGSC Patch</a>
+</nav>
+
+
+<footer class="doc-footer">
+  <p><strong>Author:</strong> Shyed Shahriar</p>
+  <p><strong>Content Type:</strong> Local RAG RAFT System</p>
+  <p><strong>Date-Time:</strong> 2026-05-26 00:00 (Asia/Dhaka)</p>
+  <p><strong>Reference anchors:</strong>
+    <a href="https://docs.mathjax.org/en/v4.1/input/tex/delimiters.html">MathJax delimiters</a> |
+    <a href="https://proceedings.neurips.cc/paper_files/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html">RAG</a> |
+    <a href="https://arxiv.org/abs/2403.10131">RAFT</a> |
+    <a href="https://microsoft.github.io/graphrag/">GraphRAG</a>
+  </p>
+</footer>
+
+</main>
+</body>
+</html>
